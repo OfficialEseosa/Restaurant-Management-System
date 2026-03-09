@@ -2,14 +2,17 @@ package edu.gsu.restaurant.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString(exclude = "passwordHash")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,6 +25,7 @@ public class User {
 
     private String role;
 
+    @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
 }
