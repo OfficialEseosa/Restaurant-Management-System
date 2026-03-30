@@ -18,8 +18,10 @@ public class Ingredient {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long ingredientId;
 
+    @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
     private String unit;
 
     private String imageUrl;
