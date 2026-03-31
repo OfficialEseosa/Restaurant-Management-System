@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "RestaurantApplication",
+            "request": "launch",
+            "mainClass": "edu.gsu.restaurant.RestaurantApplication",
+            "projectName": "restaurant",
+            "cwd": "${workspaceFolder}/backend"
+        }
+    ]
+}
