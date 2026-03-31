@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import edu.gsu.restaurant.entity.OrderItem;
+import edu.gsu.restaurant.exception.ResourceNotFoundException;
 import edu.gsu.restaurant.repository.OrderItemRepository;
 
 @Service
@@ -22,7 +23,7 @@ public class OrderItemService {
 
     public OrderItem getOrderItemById(Long id) {
         return orderItemRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Order item not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Order item not found"));
     }
 
     public OrderItem save(OrderItem orderItem) {
