@@ -1,5 +1,6 @@
 package edu.gsu.restaurant.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -37,6 +38,7 @@ public class MenuItem {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
+    @JsonManagedReference("menuItem-ingredients")
     @OneToMany(mappedBy = "menuItem", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MenuItemIngredient> menuItemIngredients;
 }
