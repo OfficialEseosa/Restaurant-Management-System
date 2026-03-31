@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import edu.gsu.restaurant.entity.StockChangeLog;
+import edu.gsu.restaurant.exception.ResourceNotFoundException;
 import edu.gsu.restaurant.repository.StockChangeLogRepository;
 
 @Service
@@ -22,7 +23,7 @@ public class StockChangeLogService {
 
     public StockChangeLog getById(Long id) {
         return stockChangeLogRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Stock change log not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Stock change log not found: " + id));
     }
 
     public StockChangeLog save(StockChangeLog log) {

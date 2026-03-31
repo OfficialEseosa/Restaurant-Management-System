@@ -1,5 +1,6 @@
 package edu.gsu.restaurant.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -15,6 +16,7 @@ public class MenuItemIngredient {
     @EmbeddedId
     private MenuItemIngredientId id;
 
+    @JsonBackReference("menuItem-ingredients")
     @ManyToOne
     @MapsId("menuItemId")
     @JoinColumn(name = "menu_item_id")

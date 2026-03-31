@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import edu.gsu.restaurant.entity.Ingredient;
+import edu.gsu.restaurant.exception.ResourceNotFoundException;
 import edu.gsu.restaurant.repository.IngredientRepository;
 
 @Service
@@ -21,7 +22,7 @@ public class IngredientService {
 
     public Ingredient getIngredientById(Long id) {
         return ingredientRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ingredient not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Ingredient not found: " + id));
     }
 
     public Ingredient save(Ingredient ingredient) {

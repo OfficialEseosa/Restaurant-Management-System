@@ -1,5 +1,6 @@
 package edu.gsu.restaurant.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -18,10 +19,12 @@ public class StockChangeLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long stockChangeId;
 
+    @JsonIgnoreProperties({"passwordHash"})
     @ManyToOne
     @JoinColumn(name = "admin_user_id", nullable = false)
     private User adminUser;
 
+    @JsonIgnoreProperties({"inventory"})
     @ManyToOne
     @JoinColumn(name = "ingredient_id", nullable = false)
     private Ingredient ingredient;
