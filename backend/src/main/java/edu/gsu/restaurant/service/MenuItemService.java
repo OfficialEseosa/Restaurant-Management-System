@@ -23,7 +23,7 @@ public class MenuItemService {
 
     public MenuItem getMenuItemById(Long id) {
         return menuItemRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Menu item not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Menu item not found: " + id));
     }
 
     public MenuItem save(MenuItem menuItem) {
