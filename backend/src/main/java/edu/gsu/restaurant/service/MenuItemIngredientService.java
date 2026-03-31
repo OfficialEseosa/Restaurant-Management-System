@@ -17,11 +17,11 @@ public class MenuItemIngredientService {
         this.menuItemIngredientRepository = menuItemIngredientRepository;
     }
 
-    public List<MenuItemIngredient> getAll() {
+    public List<MenuItemIngredient> getAllMenuItemIngredients() {
         return menuItemIngredientRepository.findAll();
     }
 
-    public MenuItemIngredient getById(MenuItemIngredientId id) {
+    public MenuItemIngredient getMenuItemIngredientById(MenuItemIngredientId id) {
         return menuItemIngredientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("MenuItemIngredient not found"));
     }
