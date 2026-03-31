@@ -1,5 +1,6 @@
 package edu.gsu.restaurant.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -22,6 +23,7 @@ public class IngredientInventory {
     @UpdateTimestamp
     private LocalDateTime lastUpdatedAt;
 
+    @JsonBackReference("ingredient-inventory")
     @OneToOne
     @MapsId
     @JoinColumn(name = "ingredient_id")

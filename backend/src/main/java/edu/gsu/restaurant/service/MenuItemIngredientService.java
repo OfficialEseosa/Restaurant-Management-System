@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import edu.gsu.restaurant.entity.MenuItemIngredient;
 import edu.gsu.restaurant.entity.MenuItemIngredientId;
+import edu.gsu.restaurant.exception.ResourceNotFoundException;
 import edu.gsu.restaurant.repository.MenuItemIngredientRepository;
 
 @Service
@@ -23,7 +24,7 @@ public class MenuItemIngredientService {
 
     public MenuItemIngredient getMenuItemIngredientById(MenuItemIngredientId id) {
         return menuItemIngredientRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("MenuItemIngredient not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("MenuItemIngredient not found"));
     }
 
     public MenuItemIngredient save(MenuItemIngredient menuItemIngredient) {
