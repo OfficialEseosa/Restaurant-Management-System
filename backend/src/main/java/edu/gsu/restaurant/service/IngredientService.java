@@ -22,7 +22,7 @@ public class IngredientService {
 
     public Ingredient getIngredientById(Long id) {
         return ingredientRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Ingredient not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Ingredient not found: " + id));
     }
 
     public Ingredient save(Ingredient ingredient) {

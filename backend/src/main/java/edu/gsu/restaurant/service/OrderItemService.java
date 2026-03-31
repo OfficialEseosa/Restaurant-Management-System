@@ -23,7 +23,7 @@ public class OrderItemService {
 
     public OrderItem getOrderItemById(Long id) {
         return orderItemRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Order item not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Order item not found: " + id));
     }
 
     public OrderItem save(OrderItem orderItem) {

@@ -23,7 +23,7 @@ public class StockChangeLogService {
 
     public StockChangeLog getById(Long id) {
         return stockChangeLogRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Stock change log not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Stock change log not found: " + id));
     }
 
     public StockChangeLog save(StockChangeLog log) {
