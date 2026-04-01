@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import '../styles/loginpage.css'
 
-const API_BASE = 'http://localhost:8080/api/auth'
+const API_BASE = 'http://localhost:8080/api/users'
 
 function AdminLogin() {
   const navigate = useNavigate()

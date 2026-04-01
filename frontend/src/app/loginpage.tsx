@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import '../styles/loginpage.css'
 
-const API_BASE = 'http://localhost:8080/api/auth'
+const API_BASE = 'http://localhost:8080/api/users'
 
 function LoginPage() {
   const [searchParams] = useSearchParams()

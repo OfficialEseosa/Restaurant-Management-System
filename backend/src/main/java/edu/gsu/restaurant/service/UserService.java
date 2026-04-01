@@ -1,7 +1,6 @@
 package edu.gsu.restaurant.service;
 
-import java.util.List;
-
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import edu.gsu.restaurant.entity.User;
@@ -11,25 +10,34 @@ import edu.gsu.restaurant.repository.UserRepository;
 @Service
 public class UserService {
     private final UserRepository userRepository;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
-    }
+    public User register(String username, String password, User.Role role) {
+        if (userRepository.existsByUsername(username)) {
+            throw new IllegalArgumentException("Username already taken");
+        }
 
-    public User getUserById(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id));
-    }
+        User user = User.builder()
+                .username(username)
+                .passwordHash(passwordEncoder.encode(password))
+                .role(role)
+                .build();
 
-    public User save(User user) {
         return userRepository.save(user);
     }
 
-    public void delete(Long id) {
-        userRepository.deleteById(id);
+    public User login(String username, String password) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));
+
+        if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+            throw new IllegalArgumentException("Invalid username or password");
+        }
+
+        return user;
     }
 }
