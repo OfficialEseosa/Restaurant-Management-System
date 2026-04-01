@@ -1,12 +1,9 @@
 package edu.gsu.restaurant.controller;
 
-import java.util.List;
+import java.util.Map;
 
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,30 +20,34 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping
-    public List<User> getAll() {
-        return userService.getAllUsers();
+    public record RegisterRequest(String username, String password) {}
+    public record LoginRequest(String username, String password) {}
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+        try {
+            User user = userService.register(request.username(), request.password(), User.Role.USER);
+            return ResponseEntity.ok(Map.of(
+                    "userId", user.getUserId(),
+                    "username", user.getUsername(),
+                    "role", user.getRole().name()
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
-    @GetMapping("/{id}")
-    public User getById(@PathVariable Long id) {
-        return userService.getUserById(id);
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+        try {
+            User user = userService.login(request.username(), request.password());
+            return ResponseEntity.ok(Map.of(
+                    "userId", user.getUserId(),
+                    "username", user.getUsername(),
+                    "role", user.getRole().name()
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
-
-    @PostMapping
-    public User create(@RequestBody User user) {
-        return userService.save(user);
-    }
-
-    @PutMapping("/{id}")
-    public User update(@PathVariable Long id, @RequestBody User user) {
-        user.setUserId(id);
-        return userService.save(user);
-    }
-
-    @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        userService.delete(id);
-    }
-
 }
