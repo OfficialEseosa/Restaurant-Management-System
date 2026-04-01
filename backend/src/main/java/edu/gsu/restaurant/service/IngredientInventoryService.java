@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import edu.gsu.restaurant.entity.IngredientInventory;
+import edu.gsu.restaurant.exception.ResourceNotFoundException;
 import edu.gsu.restaurant.repository.IngredientInventoryRepository;
 
 @Service
@@ -22,7 +23,7 @@ public class IngredientInventoryService {
 
     public IngredientInventory getByIngredientId(Long ingredientId) {
         return ingredientInventoryRepository.findById(ingredientId)
-                .orElseThrow(() -> new RuntimeException("Inventory not found for ingredient: " + ingredientId));
+                .orElseThrow(() -> new ResourceNotFoundException("Inventory not found for ingredient: " + ingredientId));
     }
 
     public IngredientInventory save(IngredientInventory inventory) {

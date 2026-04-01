@@ -1,5 +1,7 @@
 package edu.gsu.restaurant.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -21,6 +23,7 @@ public class User {
     @Column(nullable = false, unique = true)
     private String username;
 
+    @JsonProperty(access = Access.WRITE_ONLY)
     @Column(nullable = false)
     private String passwordHash;
 

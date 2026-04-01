@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import edu.gsu.restaurant.entity.User;
+import edu.gsu.restaurant.exception.ResourceNotFoundException;
 import edu.gsu.restaurant.repository.UserRepository;
 
 @Service
@@ -21,7 +22,7 @@ public class UserService {
 
     public User getUserById(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id));
     }
 
     public User save(User user) {
