@@ -1,10 +1,15 @@
-import './App.css'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Landingpage from './app/landingpage'
+import LoginPage from './app/loginpage'
 
 function App() {
   return (
-    <div>
-      <h1>Restaurant Management System</h1>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Landingpage />} />
+        <Route path="/login" element={<LoginPage />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
