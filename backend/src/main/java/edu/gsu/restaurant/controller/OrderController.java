@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import edu.gsu.restaurant.dto.PlaceOrderRequest;
 import edu.gsu.restaurant.entity.Order;
 import edu.gsu.restaurant.service.OrderService;
 
@@ -43,6 +44,16 @@ public class OrderController {
     public Order update(@PathVariable Long id, @RequestBody Order order) {
         order.setOrderId(id);
         return orderService.save(order);
+    }
+
+    @GetMapping("/user/{userId}")
+    public List<Order> getByUser(@PathVariable Long userId) {
+        return orderService.getOrdersByUserId(userId);
+    }
+
+    @PostMapping("/place")
+    public Order place(@RequestBody PlaceOrderRequest request) {
+        return orderService.placeOrder(request);
     }
 
     @DeleteMapping("/{id}")

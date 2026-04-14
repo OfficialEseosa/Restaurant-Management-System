@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import edu.gsu.restaurant.dto.MenuItemAvailabilityDto;
 import edu.gsu.restaurant.entity.MenuItem;
 import edu.gsu.restaurant.service.MenuItemService;
 
@@ -27,6 +28,11 @@ public class MenuItemController {
     @GetMapping
     public List<MenuItem> getAll() {
         return menuItemService.getAllMenuItems();
+    }
+
+    @GetMapping("/availability")
+    public List<MenuItemAvailabilityDto> getAvailability() {
+        return menuItemService.getMenuItemsWithAvailability();
     }
 
     @GetMapping("/{id}")
