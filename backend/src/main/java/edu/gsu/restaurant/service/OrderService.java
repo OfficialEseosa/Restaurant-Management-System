@@ -8,11 +8,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import edu.gsu.restaurant.dto.PlaceOrderRequest;
+import edu.gsu.restaurant.entity.IngredientInventory;
 import edu.gsu.restaurant.entity.MenuItem;
+import edu.gsu.restaurant.entity.MenuItemIngredient;
 import edu.gsu.restaurant.entity.Order;
 import edu.gsu.restaurant.entity.OrderItem;
 import edu.gsu.restaurant.entity.User;
 import edu.gsu.restaurant.exception.ResourceNotFoundException;
+import edu.gsu.restaurant.repository.IngredientInventoryRepository;
+import edu.gsu.restaurant.repository.MenuItemIngredientRepository;
 import edu.gsu.restaurant.repository.MenuItemRepository;
 import edu.gsu.restaurant.repository.OrderRepository;
 import edu.gsu.restaurant.repository.UserRepository;
@@ -23,13 +27,19 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final MenuItemRepository menuItemRepository;
+    private final MenuItemIngredientRepository menuItemIngredientRepository;
+    private final IngredientInventoryRepository inventoryRepository;
 
     public OrderService(OrderRepository orderRepository,
                         UserRepository userRepository,
-                        MenuItemRepository menuItemRepository) {
+                        MenuItemRepository menuItemRepository,
+                        MenuItemIngredientRepository menuItemIngredientRepository,
+                        IngredientInventoryRepository inventoryRepository) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.menuItemRepository = menuItemRepository;
+        this.menuItemIngredientRepository = menuItemIngredientRepository;
+        this.inventoryRepository = inventoryRepository;
     }
 
     public List<Order> getAllOrders() {
@@ -69,7 +79,24 @@ public class OrderService {
         }
 
         order.setOrderItems(orderItems);
-        return orderRepository.save(order);
+        Order saved = orderRepository.save(order);
+
+        // Deduct ingredient inventory for every item in the order
+        for (OrderItem oi : orderItems) {
+            List<MenuItemIngredient> ingredients =
+                    menuItemIngredientRepository.findByMenuItemIdWithInventory(oi.getMenuItem().getMenuItemId());
+            for (MenuItemIngredient mii : ingredients) {
+                IngredientInventory inv = mii.getIngredient().getInventory();
+                if (inv != null) {
+                    int deduction = mii.getQuantityRequired().multiply(
+                            java.math.BigDecimal.valueOf(oi.getQuantity())).intValue();
+                    inv.setQuantityOnHand(Math.max(0, inv.getQuantityOnHand() - deduction));
+                    inventoryRepository.save(inv);
+                }
+            }
+        }
+
+        return saved;
     }
 
     public Order save(Order order) {
