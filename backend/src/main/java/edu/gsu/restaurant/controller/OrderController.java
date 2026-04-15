@@ -1,14 +1,17 @@
 package edu.gsu.restaurant.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import edu.gsu.restaurant.dto.PlaceOrderRequest;
@@ -26,8 +29,8 @@ public class OrderController {
     }
 
     @GetMapping
-    public List<Order> getAll() {
-        return orderService.getAllOrders();
+    public List<Order> getAll(@RequestParam(required = false) String status) {
+        return orderService.getAllOrders(status);
     }
 
     @GetMapping("/{id}")
@@ -54,6 +57,11 @@ public class OrderController {
     @PostMapping("/place")
     public Order place(@RequestBody PlaceOrderRequest request) {
         return orderService.placeOrder(request);
+    }
+
+    @PatchMapping("/{id}/status")
+    public Order updateStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        return orderService.updateOrderStatus(id, body.get("status"));
     }
 
     @DeleteMapping("/{id}")

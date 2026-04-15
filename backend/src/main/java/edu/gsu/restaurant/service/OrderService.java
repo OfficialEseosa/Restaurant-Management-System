@@ -4,8 +4,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import edu.gsu.restaurant.dto.PlaceOrderRequest;
 import edu.gsu.restaurant.entity.IngredientInventory;
@@ -42,8 +44,13 @@ public class OrderService {
         this.inventoryRepository = inventoryRepository;
     }
 
-    public List<Order> getAllOrders() {
-        return orderRepository.findAll();
+    private static final List<String> VALID_STATUSES = List.of("PLACED", "READY", "COMPLETE", "CANCELLED");
+
+    public List<Order> getAllOrders(String status) {
+        if (status == null || status.isBlank()) {
+            return orderRepository.findAll();
+        }
+        return orderRepository.findByStatus(status.toUpperCase());
     }
 
     public Order getOrderById(Long id) {
@@ -57,6 +64,9 @@ public class OrderService {
 
     @Transactional
     public Order placeOrder(PlaceOrderRequest request) {
+        if (request.getItems() == null || request.getItems().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order must contain at least one item");
+        }
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + request.getUserId()));
 
@@ -97,6 +107,16 @@ public class OrderService {
         }
 
         return saved;
+    }
+
+    public Order updateOrderStatus(Long id, String status) {
+        if (status == null || !VALID_STATUSES.contains(status.toUpperCase())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Invalid status. Must be one of: " + VALID_STATUSES);
+        }
+        Order order = getOrderById(id);
+        order.setStatus(status.toUpperCase());
+        return orderRepository.save(order);
     }
 
     public Order save(Order order) {
