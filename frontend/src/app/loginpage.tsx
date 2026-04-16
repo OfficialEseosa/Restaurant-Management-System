@@ -51,7 +51,7 @@ function LoginPage() {
       }
 
       localStorage.setItem('user', JSON.stringify(data))
-      navigate('/dashboard')
+      navigate(data.role === 'ADMIN' ? '/admin' : '/order')
     } catch {
       setError('Could not connect to server')
     } finally {

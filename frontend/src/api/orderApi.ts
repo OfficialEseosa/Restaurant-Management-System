@@ -36,6 +36,17 @@ export const placeOrder = (payload: PlaceOrderPayload) =>
 export const getOrdersByUser = (userId: number) =>
   api.get<Order[]>(`/api/orders/user/${userId}`).then(r => r.data);
 
-// Admin: all orders
-export const getAllOrders = () =>
-  api.get<Order[]>('/api/orders').then(r => r.data);
+// Admin: all orders, optional status filter
+export type OrderStatus = 'PLACED' | 'READY' | 'COMPLETE' | 'CANCELLED';
+
+export const getAllOrders = async (status?: OrderStatus): Promise<Order[]> => {
+  const url = status ? `/api/orders?status=${status}` : '/api/orders';
+  const response = await api.get<Order[]>(url);
+  return response.data;
+};
+
+// Admin: update order status
+export const updateOrderStatus = async (id: number, status: OrderStatus): Promise<Order> => {
+  const response = await api.patch<Order>(`/api/orders/${id}/status`, { status });
+  return response.data;
+};

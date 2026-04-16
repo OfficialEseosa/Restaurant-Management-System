@@ -1,0 +1,59 @@
+.analytics-tab__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.analytics-tab__controls label {
+  font-size: 0.875rem;
+  color: #555;
+}
+
+.analytics-tab__controls input[type="date"] {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.btn-apply {
+  padding: 0.35rem 1rem;
+  background: #4f86c6;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.btn-apply:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.analytics-tab__panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.analytics-tab__panel {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+}
+
+.analytics-tab__panel h3 {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+@media (max-width: 900px) {
+  .analytics-tab__panels {
+    grid-template-columns: 1fr;
+  }
+}

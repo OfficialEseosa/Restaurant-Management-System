@@ -36,7 +36,7 @@ function AdminLogin() {
       }
 
       localStorage.setItem('user', JSON.stringify(data))
-      navigate('/dashboard')
+      navigate('/admin')
     } catch {
       setError('Could not connect to server')
     } finally {
