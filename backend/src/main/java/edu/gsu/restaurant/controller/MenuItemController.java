@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import edu.gsu.restaurant.dto.MenuItemAvailabilityDto;
 import edu.gsu.restaurant.entity.MenuItem;
 import edu.gsu.restaurant.service.MenuItemService;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/menu-items")
@@ -41,12 +42,12 @@ public class MenuItemController {
     }
 
     @PostMapping
-    public MenuItem create(@RequestBody MenuItem menuItem) {
+    public MenuItem create(@Valid @RequestBody MenuItem menuItem) {
         return menuItemService.save(menuItem);
     }
 
     @PutMapping("/{id}")
-    public MenuItem update(@PathVariable Long id, @RequestBody MenuItem menuItem) {
+    public MenuItem update(@PathVariable Long id, @Valid @RequestBody MenuItem menuItem) {
         menuItem.setMenuItemId(id);
         return menuItemService.save(menuItem);
     }
