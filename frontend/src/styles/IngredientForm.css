@@ -1,0 +1,120 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-box {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: 2rem;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: var(--shadow-lg);
+  color: var(--color-text);
+}
+
+.modal-box h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-size: var(--font-size-xl);
+  color: var(--color-text);
+}
+
+.form-field {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  color: var(--color-text);
+}
+
+.form-field label {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.form-field input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-md);
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+  transition: border-color 0.15s;
+}
+
+.form-field input:focus {
+  border-color: var(--color-primary);
+  outline: none;
+}
+
+.form-field input.input-error {
+  border-color: var(--color-error);
+}
+
+.field-error {
+  color: var(--color-error);
+  font-size: var(--font-size-xs);
+}
+
+.required-star {
+  color: var(--color-error);
+}
+
+.api-error-banner {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-sm);
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.btn-cancel {
+  padding: 0.5rem 1.25rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: var(--font-size-base);
+}
+
+.btn-cancel:hover {
+  background: var(--color-bg);
+}
+
+.btn-submit {
+  padding: 0.5rem 1.25rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: #fff;
+  cursor: pointer;
+  font-size: var(--font-size-base);
+  font-weight: 600;
+}
+
+.btn-submit:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+
+.btn-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

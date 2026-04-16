@@ -2,6 +2,8 @@ package edu.gsu.restaurant.entity;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
@@ -19,12 +21,18 @@ public class Ingredient {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long ingredientId;
 
+    @NotBlank
     @Column(nullable = false)
     private String name;
 
+    @NotBlank
     @Column(nullable = false)
     private String unit;
 
+    @Pattern(
+        regexp = "^(https?://[^\\s<>\"]+|/[^\\s<>\"]*)?$",
+        message = "imageUrl must be a valid http/https URL or a relative path"
+    )
     private String imageUrl;
 
     @CreationTimestamp

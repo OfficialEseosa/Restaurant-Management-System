@@ -11,8 +11,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import edu.gsu.restaurant.dto.MenuItemWithAvailabilityDTO;
 import edu.gsu.restaurant.entity.MenuItem;
 import edu.gsu.restaurant.service.MenuItemService;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/menu-items")
@@ -22,6 +24,12 @@ public class MenuItemController {
 
     public MenuItemController(MenuItemService menuItemService) {
         this.menuItemService = menuItemService;
+    }
+
+    @GetMapping("/availability")
+    public List<MenuItemWithAvailabilityDTO> getMenuItemsWithAvailability() {
+        //TODO (John) replace with real query: menuItemRepository.findByActiveTrue() + availability check per ingredient inventory
+        return List.of(); // placeholder: returns empty list
     }
 
     @GetMapping
@@ -35,12 +43,12 @@ public class MenuItemController {
     }
 
     @PostMapping
-    public MenuItem create(@RequestBody MenuItem menuItem) {
+    public MenuItem create(@Valid @RequestBody MenuItem menuItem) {
         return menuItemService.save(menuItem);
     }
 
     @PutMapping("/{id}")
-    public MenuItem update(@PathVariable Long id, @RequestBody MenuItem menuItem) {
+    public MenuItem update(@PathVariable Long id, @Valid @RequestBody MenuItem menuItem) {
         menuItem.setMenuItemId(id);
         return menuItemService.save(menuItem);
     }

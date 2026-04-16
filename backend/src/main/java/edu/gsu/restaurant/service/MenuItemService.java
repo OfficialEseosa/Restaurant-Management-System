@@ -3,7 +3,9 @@ package edu.gsu.restaurant.service;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import edu.gsu.restaurant.dto.MenuItemIngredientRequest;
 import edu.gsu.restaurant.entity.MenuItem;
 import edu.gsu.restaurant.exception.ResourceNotFoundException;
 import edu.gsu.restaurant.repository.MenuItemRepository;
@@ -32,5 +34,11 @@ public class MenuItemService {
 
     public void delete(Long id) {
         menuItemRepository.deleteById(id);
+    }
+
+    @Transactional
+    public void replaceIngredients(Long menuItemId, List<MenuItemIngredientRequest> ingredients) {
+        //TODO (John) replace with real delete-then-insert logic using menuItemIngredientRepository
+        // placeholder: no-op
     }
 }

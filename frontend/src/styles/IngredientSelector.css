@@ -1,0 +1,35 @@
+.ingredient-selector ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ingredient-selector li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+}
+
+.ingredient-selector li label {
+  flex: 1;
+  color: var(--color-text-secondary);
+}
+
+.ingredient-selector .qty-input {
+  width: 80px;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.ingredient-selector .qty-input:focus {
+  border-color: var(--color-primary);
+  outline: none;
+}

@@ -2,6 +2,7 @@ package edu.gsu.restaurant.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.DecimalMin;
 import lombok.*;
 import java.math.BigDecimal;
 
@@ -27,6 +28,7 @@ public class MenuItemIngredient {
     @JoinColumn(name = "ingredient_id")
     private Ingredient ingredient;
 
+    @DecimalMin("0.0001")
     @Column(nullable = false, precision = 10, scale = 4)
     private BigDecimal quantityRequired;
 }

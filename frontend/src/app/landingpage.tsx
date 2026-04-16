@@ -1,48 +1,59 @@
-import '../styles/landingpage.css'
+import { useNavigate } from 'react-router-dom';
+import '../styles/landingpage.css';
 
-function Landingpage() {
+const FEATURES = [
+  { icon: '🛒', title: 'Customer Ordering',    desc: 'Browse the menu, add items to a cart, and place orders with ease.' },
+  { icon: '📋', title: 'Order Management',     desc: 'Track and manage incoming orders from a central dashboard.' },
+  { icon: '🍽️', title: 'Menu Control',         desc: 'Create, edit, and deactivate menu items with ingredient assignments.' },
+  { icon: '📦', title: 'Inventory Tracking',   desc: 'Monitor ingredient stock levels and log every adjustment.' },
+  { icon: '👤', title: 'Staff Management',     desc: 'Manage admin accounts and control access to the system.' },
+  { icon: '📊', title: 'Analytics',            desc: 'View order history and usage trends to inform decisions.' },
+];
+
+export default function Landingpage() {
+  const navigate = useNavigate();
+
   return (
     <div className="page">
+
+      {/* ── Navbar ── */}
       <nav className="navbar">
-        <span className="logo">*Placeholder Name*</span>
+        <span className="logo">🍴 RestaurantOS</span>
         <div className="nav-links">
           <a href="#features" className="nav-link">Features</a>
-          <a href="#about" className="nav-link">About</a>
-          <a href='/login'>
-            <button className="login-btn">Login</button>
-          </a>
+          <a href="#about"    className="nav-link">About</a>
+          <button className="nav-login-btn" onClick={() => navigate('/login')}>
+            Login
+          </button>
         </div>
       </nav>
 
+      {/* ── Hero ── */}
       <section className="hero">
-        <h1 className="hero-title">Manage Your Restaurant With Us!</h1>
+        <h1 className="hero-title">Manage Your Restaurant,<br />All in One Place.</h1>
         <p className="hero-sub">
-          Let customers order, and streamline orders, inventory, menu management, and staff — all from one dashboard.
+          Streamline orders, inventory, and menu management — built for small restaurants that want to move fast.
         </p>
-        <a href='/login'>
-          <button className="cta-btn">Get Started</button>
-        </a>
+        <button className="cta-btn" onClick={() => navigate('/login')}>
+          Get Started
+        </button>
       </section>
 
-      <section className='statement'>
-        <h2 className='sub-title'>
-          Who We Serve
-        </h2>
-            <p className='paragraph'>
-            This project is a database-driven restaurant management system designed for a small, single-owner restaurant. The system supports two types of users: customers and administrators. Customers can browse the restaurant’s menu, view item availability based on ingredient stock levels, place orders using a cart-based flow, and review their previous orders. Administrators can manage ingredients and menu items, update inventory quantities, upload images for ingredients and menu items, and view analytics related to customer orders. 
-            </p>
+      {/* ── About ── */}
+      <section id="about" className="statement">
+        <h2 className="sub-title">Who We Serve</h2>
+        <p className="paragraph">
+          RestaurantOS is a full-stack management system designed for small, single-owner restaurants.
+          Customers can browse the menu, check ingredient-based availability, place orders, and review
+          their history. Administrators manage ingredients, menu items, inventory, and can view order
+          analytics — all from one dashboard.
+        </p>
       </section>
 
+      {/* ── Features ── */}
       <section id="features" className="features">
-        {[
-          { icon: '🛒', title: 'Customer Use', desc: 'Desc.' },
-          { icon: '📋', title: 'Order Management', desc: 'Desc.' },
-          { icon: '🍽️', title: 'Menu Control', desc: 'Desc.' },
-          { icon: '📦', title: 'Inventory Tracking', desc: 'Desc.' },
-          { icon: '👤', title: 'Staff Management', desc: 'Desc.' },
-          { icon: '📊', title: 'Analytics', desc: 'Desc.' },
-        ].map((f) => (
-          <div key={f.title} className="card">
+        {FEATURES.map((f) => (
+          <div key={f.title} className="feature-card">
             <span className="card-icon">{f.icon}</span>
             <h3 className="card-title">{f.title}</h3>
             <p className="card-desc">{f.desc}</p>
@@ -50,11 +61,20 @@ function Landingpage() {
         ))}
       </section>
 
-      <footer className="footer">
-        <p>© 2026 *Placeholder Name*. All rights reserved.</p>
-      </footer>
-    </div>
-  )
-}
+      {/* ── CTA Banner ── */}
+      <section className="cta-banner">
+        <h2 className="cta-banner__title">Ready to get started?</h2>
+        <p className="cta-banner__sub">Sign in and take control of your restaurant today.</p>
+        <button className="cta-btn" onClick={() => navigate('/login')}>
+          Sign In
+        </button>
+      </section>
 
-export default Landingpage
+      {/* ── Footer ── */}
+      <footer className="footer">
+        <p>© 2026 RestaurantOS. All rights reserved.</p>
+      </footer>
+
+    </div>
+  );
+}

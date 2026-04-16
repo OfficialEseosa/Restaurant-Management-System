@@ -1,0 +1,16 @@
+/* Shared classes (.tab-container, .tab-header, .data-table, .alert-banner,
+   .empty-text) are defined in IngredientsTab.css */
+
+.change-positive {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.change-negative {
+  color: var(--color-error-dark);
+  font-weight: 600;
+}
+
+.change-zero {
+  color: var(--color-text-muted);
+}

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import edu.gsu.restaurant.entity.MenuItemIngredient;
 import edu.gsu.restaurant.entity.MenuItemIngredientId;
 import edu.gsu.restaurant.service.MenuItemIngredientService;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/menu-item-ingredients")
@@ -30,19 +31,25 @@ public class MenuItemIngredientController {
         return menuItemIngredientService.getAllMenuItemIngredients();
     }
 
+    @GetMapping("/menu-item/{menuItemId}")
+    public List<MenuItemIngredient> getByMenuItem(@PathVariable Long menuItemId) {
+        //TODO (John) replace with real data from menuItemIngredientRepository.findByMenuItemMenuItemId(menuItemId)
+        return List.of(); // placeholder: returns empty list
+    }
+
     @GetMapping("/{menuItemId}/{ingredientId}")
     public MenuItemIngredient getById(@PathVariable Long menuItemId, @PathVariable Long ingredientId) {
         return menuItemIngredientService.getMenuItemIngredientById(new MenuItemIngredientId(menuItemId, ingredientId));
     }
 
     @PostMapping
-    public MenuItemIngredient create(@RequestBody MenuItemIngredient menuItemIngredient) {
+    public MenuItemIngredient create(@Valid @RequestBody MenuItemIngredient menuItemIngredient) {
         return menuItemIngredientService.save(menuItemIngredient);
     }
 
     @PutMapping("/{menuItemId}/{ingredientId}")
     public MenuItemIngredient update(@PathVariable Long menuItemId, @PathVariable Long ingredientId,
-            @RequestBody MenuItemIngredient menuItemIngredient) {
+            @Valid @RequestBody MenuItemIngredient menuItemIngredient) {
         menuItemIngredient.setId(new MenuItemIngredientId(menuItemId, ingredientId));
         return menuItemIngredientService.save(menuItemIngredient);
     }
