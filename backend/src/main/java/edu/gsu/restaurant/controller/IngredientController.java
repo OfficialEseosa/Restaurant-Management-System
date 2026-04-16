@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import edu.gsu.restaurant.entity.Ingredient;
 import edu.gsu.restaurant.service.IngredientService;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/ingredients")
@@ -35,12 +36,12 @@ public class IngredientController {
     }
 
     @PostMapping
-    public Ingredient create(@RequestBody Ingredient ingredient) {
+    public Ingredient create(@Valid @RequestBody Ingredient ingredient) {
         return ingredientService.save(ingredient);
     }
 
     @PutMapping("/{id}")
-    public Ingredient update(@PathVariable Long id, @RequestBody Ingredient ingredient) {
+    public Ingredient update(@PathVariable Long id, @Valid @RequestBody Ingredient ingredient) {
         ingredient.setIngredientId(id);
         return ingredientService.save(ingredient);
     }

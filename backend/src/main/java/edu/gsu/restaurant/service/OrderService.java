@@ -79,6 +79,9 @@ public class OrderService {
         for (PlaceOrderRequest.OrderItemRequest itemReq : request.getItems()) {
             MenuItem menuItem = menuItemRepository.findById(itemReq.getMenuItemId())
                     .orElseThrow(() -> new ResourceNotFoundException("Menu item not found: " + itemReq.getMenuItemId()));
+            if (!menuItem.isActive()) {
+                throw new ResourceNotFoundException("Menu item is not available: " + itemReq.getMenuItemId());
+            }
 
             OrderItem oi = new OrderItem();
             oi.setOrder(order);

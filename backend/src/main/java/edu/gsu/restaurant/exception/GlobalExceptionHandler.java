@@ -19,4 +19,13 @@ public class GlobalExceptionHandler {
                 "timestamp", LocalDateTime.now().toString()
         ));
     }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<Map<String, Object>> handleConflict(ConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                "error", ex.getMessage(),
+                "status", HttpStatus.CONFLICT.value(),
+                "timestamp", LocalDateTime.now().toString()
+        ));
+    }
 }

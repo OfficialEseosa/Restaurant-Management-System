@@ -13,4 +13,8 @@ public interface MenuItemIngredientRepository extends JpaRepository<MenuItemIngr
 
     @Query("SELECT mii FROM MenuItemIngredient mii JOIN FETCH mii.ingredient ing JOIN FETCH ing.inventory WHERE mii.menuItem.menuItemId = :menuItemId")
     List<MenuItemIngredient> findByMenuItemIdWithInventory(@Param("menuItemId") Long menuItemId);
+
+    boolean existsByIngredientIngredientId(Long ingredientId);
+
+    long countByIngredientIngredientId(Long ingredientId);
 }
