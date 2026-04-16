@@ -1,0 +1,135 @@
+.admin-page {
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+/* ── Header ── */
+.admin-header {
+  background: var(--color-primary);
+  color: #fff;
+  padding: 0.875rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-header h1 {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: #fff;
+}
+
+/* ── Tab bar ── */
+.admin-tab-bar {
+  display: flex;
+  border-bottom: 2px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 0 2rem;
+}
+
+.admin-tab-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-weight: 400;
+  font-size: var(--font-size-md);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.admin-tab-btn:hover {
+  color: var(--color-primary);
+}
+
+.admin-tab-btn.active {
+  border-bottom-color: var(--color-primary);
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+/* ── Content ── */
+.admin-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem;
+}
+
+/* ── Profile button & dropdown ── */
+.admin-profile {
+  position: relative;
+}
+
+.admin-profile-btn {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: var(--radius-full);
+  width: 2.25rem;
+  height: 2.25rem;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  transition: background 0.15s;
+}
+
+.admin-profile-btn:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+.admin-profile-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  min-width: 180px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.admin-profile-info {
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.admin-profile-name {
+  font-weight: 600;
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+}
+
+.admin-profile-role {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.admin-profile-divider {
+  margin: 0;
+  border: none;
+  border-top: 1px solid var(--color-border);
+}
+
+.admin-profile-logout {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: var(--font-size-base);
+  color: var(--color-error);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.admin-profile-logout:hover {
+  background: var(--color-error-bg);
+}

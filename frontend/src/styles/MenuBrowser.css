@@ -1,0 +1,119 @@
+.menu-browser {
+  flex: 1;
+  min-width: 0;
+}
+
+.menu-browser__empty {
+  color: var(--color-text-muted);
+  padding: 1rem 0;
+}
+
+.menu-browser__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.menu-browser__card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-surface);
+  transition: box-shadow 0.15s;
+}
+
+.menu-browser__card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.menu-browser__card.card--unavailable {
+  opacity: 0.55;
+  filter: grayscale(60%);
+  background: var(--color-bg);
+}
+
+.menu-browser__card-image {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+}
+
+.menu-browser__card-image-placeholder {
+  width: 100%;
+  height: 140px;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  color: var(--color-text-muted);
+}
+
+.menu-browser__card-body {
+  padding: 0.75rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.menu-browser__card-name {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.menu-browser__card-description {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  flex: 1;
+}
+
+.menu-browser__card-price {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.menu-browser__badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  align-self: flex-start;
+}
+
+.menu-browser__badge--available {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.menu-browser__badge--unavailable {
+  background: var(--color-error-bg);
+  color: var(--color-error-dark);
+}
+
+.menu-browser__add-btn {
+  margin: 0.75rem;
+  padding: 0.5rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: #fff;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.menu-browser__add-btn:hover:not(:disabled) {
+  background: var(--color-accent-dark);
+}
+
+.menu-browser__add-btn:disabled {
+  background: var(--color-text-muted);
+  cursor: not-allowed;
+}

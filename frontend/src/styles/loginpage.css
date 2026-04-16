@@ -1,0 +1,137 @@
+.login-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #111;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  box-sizing: border-box;
+}
+
+.login-card {
+  background-color: #fff;
+  border-radius: 16px;
+  padding: 48px 40px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.login-logo {
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  margin: 0 0 24px;
+  color: #e85d04;
+}
+
+.login-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: #111;
+}
+
+.login-sub {
+  color: #888;
+  margin: 0 0 24px;
+  font-size: 0.9rem;
+}
+
+.login-error {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  gap: 6px;
+}
+
+.login-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #444;
+  margin-top: 10px;
+}
+
+.login-input {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  font-size: 0.9rem;
+  outline: none;
+  color: #1a1a1a;
+  background-color: #fafafa;
+  transition: border-color 0.2s;
+}
+
+.login-input:focus {
+  border-color: #e85d04;
+}
+
+.login-submit-btn {
+  margin-top: 20px;
+  background-color: #e85d04;
+  color: #fff;
+  border: none;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.login-submit-btn:hover {
+  background-color: #d35400;
+  border-color: transparent;
+}
+
+.login-submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.login-footer {
+  margin-top: 24px;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.login-toggle {
+  background: none;
+  border: none;
+  color: #e85d04;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0;
+}
+
+.login-toggle:hover {
+  text-decoration: underline;
+  border-color: transparent;
+}
+
+.login-home-link {
+  display: inline-block;
+  margin-top: 16px;
+  font-size: 0.8rem;
+  color: #aaa;
+  text-decoration: none;
+}
+
+.login-home-link:hover {
+  color: #e85d04;
+}
