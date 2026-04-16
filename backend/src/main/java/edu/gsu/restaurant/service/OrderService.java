@@ -4,15 +4,21 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import edu.gsu.restaurant.dto.PlaceOrderRequest;
+import edu.gsu.restaurant.entity.IngredientInventory;
 import edu.gsu.restaurant.entity.MenuItem;
+import edu.gsu.restaurant.entity.MenuItemIngredient;
 import edu.gsu.restaurant.entity.Order;
 import edu.gsu.restaurant.entity.OrderItem;
 import edu.gsu.restaurant.entity.User;
 import edu.gsu.restaurant.exception.ResourceNotFoundException;
+import edu.gsu.restaurant.repository.IngredientInventoryRepository;
+import edu.gsu.restaurant.repository.MenuItemIngredientRepository;
 import edu.gsu.restaurant.repository.MenuItemRepository;
 import edu.gsu.restaurant.repository.OrderRepository;
 import edu.gsu.restaurant.repository.UserRepository;
@@ -23,17 +29,28 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final MenuItemRepository menuItemRepository;
+    private final MenuItemIngredientRepository menuItemIngredientRepository;
+    private final IngredientInventoryRepository inventoryRepository;
 
     public OrderService(OrderRepository orderRepository,
                         UserRepository userRepository,
-                        MenuItemRepository menuItemRepository) {
+                        MenuItemRepository menuItemRepository,
+                        MenuItemIngredientRepository menuItemIngredientRepository,
+                        IngredientInventoryRepository inventoryRepository) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.menuItemRepository = menuItemRepository;
+        this.menuItemIngredientRepository = menuItemIngredientRepository;
+        this.inventoryRepository = inventoryRepository;
     }
 
-    public List<Order> getAllOrders() {
-        return orderRepository.findAll();
+    private static final List<String> VALID_STATUSES = List.of("PLACED", "READY", "COMPLETE", "CANCELLED");
+
+    public List<Order> getAllOrders(String status) {
+        if (status == null || status.isBlank()) {
+            return orderRepository.findAll();
+        }
+        return orderRepository.findByStatus(status.toUpperCase());
     }
 
     public Order getOrderById(Long id) {
@@ -47,6 +64,9 @@ public class OrderService {
 
     @Transactional
     public Order placeOrder(PlaceOrderRequest request) {
+        if (request.getItems() == null || request.getItems().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order must contain at least one item");
+        }
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + request.getUserId()));
 
@@ -69,6 +89,33 @@ public class OrderService {
         }
 
         order.setOrderItems(orderItems);
+        Order saved = orderRepository.save(order);
+
+        // Deduct ingredient inventory for every item in the order
+        for (OrderItem oi : orderItems) {
+            List<MenuItemIngredient> ingredients =
+                    menuItemIngredientRepository.findByMenuItemIdWithInventory(oi.getMenuItem().getMenuItemId());
+            for (MenuItemIngredient mii : ingredients) {
+                IngredientInventory inv = mii.getIngredient().getInventory();
+                if (inv != null) {
+                    int deduction = mii.getQuantityRequired().multiply(
+                            java.math.BigDecimal.valueOf(oi.getQuantity())).intValue();
+                    inv.setQuantityOnHand(Math.max(0, inv.getQuantityOnHand() - deduction));
+                    inventoryRepository.save(inv);
+                }
+            }
+        }
+
+        return saved;
+    }
+
+    public Order updateOrderStatus(Long id, String status) {
+        if (status == null || !VALID_STATUSES.contains(status.toUpperCase())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Invalid status. Must be one of: " + VALID_STATUSES);
+        }
+        Order order = getOrderById(id);
+        order.setStatus(status.toUpperCase());
         return orderRepository.save(order);
     }
 
