@@ -1,6 +1,5 @@
 package edu.gsu.restaurant.service;
 
-import edu.gsu.restaurant.entity.Ingredient;
 import edu.gsu.restaurant.exception.ConflictException;
 import edu.gsu.restaurant.repository.IngredientRepository;
 import edu.gsu.restaurant.repository.MenuItemIngredientRepository;
@@ -8,8 +7,6 @@ import net.jqwik.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThatNoException;
@@ -45,19 +42,17 @@ class IngredientServicePropertyTest {
      */
     @Property
     void ingredientDeletionGuard_throwsConflictWhenReferenced(@ForAll long ingredientId) {
-        // Arrange: ingredient exists and is referenced
         IngredientRepository localIngredientRepo = mock(IngredientRepository.class);
         MenuItemIngredientRepository localMenuItemIngredientRepo = mock(MenuItemIngredientRepository.class);
 
         when(localMenuItemIngredientRepo.existsByIngredientIngredientId(ingredientId)).thenReturn(true);
+        when(localMenuItemIngredientRepo.countByIngredientIngredientId(ingredientId)).thenReturn(1L);
 
         IngredientService service = new IngredientService(localIngredientRepo, localMenuItemIngredientRepo);
 
-        // Act & Assert: ConflictException must be thrown
         assertThatThrownBy(() -> service.delete(ingredientId))
                 .isInstanceOf(ConflictException.class);
 
-        // The ingredient must NOT be deleted
         verify(localIngredientRepo, never()).deleteById(ingredientId);
     }
 
@@ -67,7 +62,6 @@ class IngredientServicePropertyTest {
      */
     @Property
     void ingredientDeletionGuard_succeedsWhenNotReferenced(@ForAll long ingredientId) {
-        // Arrange: ingredient is not referenced
         IngredientRepository localIngredientRepo = mock(IngredientRepository.class);
         MenuItemIngredientRepository localMenuItemIngredientRepo = mock(MenuItemIngredientRepository.class);
 
@@ -75,10 +69,8 @@ class IngredientServicePropertyTest {
 
         IngredientService service = new IngredientService(localIngredientRepo, localMenuItemIngredientRepo);
 
-        // Act & Assert: no exception thrown
         assertThatNoException().isThrownBy(() -> service.delete(ingredientId));
 
-        // deleteById must have been called
         verify(localIngredientRepo).deleteById(ingredientId);
     }
 }
