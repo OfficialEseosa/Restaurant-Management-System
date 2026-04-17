@@ -1,9 +1,20 @@
 import api from './axios';
 
+export type MenuCategory =
+  | 'BURGERS'
+  | 'SANDWICHES'
+  | 'FRIES'
+  | 'SIDES'
+  | 'BREAKFAST'
+  | 'SOUPS'
+  | 'SWEETS'
+  | 'DRINKS';
+
 export interface MenuItem {
   menuItemId: number;
   name: string;
   description: string;
+  category: MenuCategory;
   price: number;
   imageUrl: string;
   active: boolean;
@@ -16,6 +27,7 @@ export interface MenuItemWithAvailability extends MenuItem {
 export interface NewMenuItem {
   name: string;
   description: string;
+  category: MenuCategory;
   price: number;
   imageUrl: string;
   active: boolean;

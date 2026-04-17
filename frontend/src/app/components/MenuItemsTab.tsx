@@ -11,6 +11,14 @@ const getMenuItemIngredientsByMenuItem = (menuItemId: number) =>
     `/api/menu-item-ingredients/menu-item/${menuItemId}`
   ).then(r => r.data);
 
+function formatCategory(category: string): string {
+  return category
+    .toLowerCase()
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
 export default function MenuItemsTab() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,6 +70,7 @@ export default function MenuItemsTab() {
     const currentData: NewMenuItem = {
       name: item.name,
       description: item.description,
+      category: item.category,
       price: item.price,
       imageUrl: item.imageUrl,
       active: item.active,
@@ -111,53 +120,57 @@ export default function MenuItemsTab() {
       )}
 
       {loading ? (
-        <p className="empty-text">Loading menu items…</p>
+        <p className="empty-text">Loading menu items...</p>
       ) : menuItems.length === 0 ? (
         <p className="empty-text">No menu items found. Create one to get started.</p>
       ) : (
-        <table className="data-table" aria-label="Menu items table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Price</th>
-              <th>Description</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {menuItems.map(item => (
-              <tr key={item.menuItemId}>
-                <td>{item.name}</td>
-                <td>${item.price.toFixed(2)}</td>
-                <td>{item.description || '—'}</td>
-                <td>
-                  <span className={`status-badge ${item.active ? 'active' : 'inactive'}`}>
-                    {item.active ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
-                <td className="actions-cell">
-                  <button
-                    className="btn-edit"
-                    onClick={() => handleEdit(item)}
-                    aria-label={`Edit ${item.name}`}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="btn-deactivate"
-                    onClick={() => handleDeactivate(item)}
-                    disabled={!item.active}
-                    aria-label={`Deactivate ${item.name}`}
-                    aria-disabled={!item.active}
-                  >
-                    Deactivate
-                  </button>
-                </td>
+        <div className="table-scroll">
+          <table className="data-table" aria-label="Menu items table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {menuItems.map(item => (
+                <tr key={item.menuItemId}>
+                  <td>{item.name}</td>
+                  <td>{formatCategory(item.category)}</td>
+                  <td>${item.price.toFixed(2)}</td>
+                  <td>{item.description || 'N/A'}</td>
+                  <td>
+                    <span className={`status-badge ${item.active ? 'active' : 'inactive'}`}>
+                      {item.active ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="actions-cell">
+                    <button
+                      className="btn-edit"
+                      onClick={() => handleEdit(item)}
+                      aria-label={`Edit ${item.name}`}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="btn-deactivate"
+                      onClick={() => handleDeactivate(item)}
+                      disabled={!item.active}
+                      aria-label={`Deactivate ${item.name}`}
+                      aria-disabled={!item.active}
+                    >
+                      Deactivate
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {modalOpen && (
