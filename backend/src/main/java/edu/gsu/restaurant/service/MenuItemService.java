@@ -48,6 +48,9 @@ public class MenuItemService {
     }
 
     public void delete(Long id) {
-        menuItemRepository.deleteById(id);
+        MenuItem menuItem = menuItemRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Menu item not found: " + id));
+        menuItem.setActive(false);
+        menuItemRepository.save(menuItem);
     }
 }

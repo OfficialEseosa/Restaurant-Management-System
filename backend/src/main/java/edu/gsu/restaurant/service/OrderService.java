@@ -2,7 +2,9 @@ package edu.gsu.restaurant.service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -76,7 +78,14 @@ public class OrderService {
         order.setPlacedAt(LocalDateTime.now());
 
         List<OrderItem> orderItems = new ArrayList<>();
+        Map<Long, Integer> requiredByIngredientId = new HashMap<>();
+        Map<Long, IngredientInventory> inventoryByIngredientId = new HashMap<>();
+
         for (PlaceOrderRequest.OrderItemRequest itemReq : request.getItems()) {
+            if (itemReq.getQuantity() <= 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Order item quantity must be greater than 0");
+            }
+
             MenuItem menuItem = menuItemRepository.findById(itemReq.getMenuItemId())
                     .orElseThrow(() -> new ResourceNotFoundException("Menu item not found: " + itemReq.getMenuItemId()));
             if (!menuItem.isActive()) {
@@ -89,24 +98,40 @@ public class OrderService {
             oi.setQuantity(itemReq.getQuantity());
             oi.setUnitPriceAtTime(menuItem.getPrice());
             orderItems.add(oi);
+
+            List<MenuItemIngredient> ingredients =
+                    menuItemIngredientRepository.findByMenuItemIdWithInventory(menuItem.getMenuItemId());
+            for (MenuItemIngredient mii : ingredients) {
+                IngredientInventory inv = mii.getIngredient().getInventory();
+                if (inv == null) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT,
+                            "Missing inventory for ingredient: " + mii.getIngredient().getName());
+                }
+                int required = mii.getQuantityRequired()
+                        .multiply(java.math.BigDecimal.valueOf(itemReq.getQuantity()))
+                        .intValue();
+                if (required > 0) {
+                    requiredByIngredientId.merge(inv.getIngredientId(), required, Integer::sum);
+                    inventoryByIngredientId.putIfAbsent(inv.getIngredientId(), inv);
+                }
+            }
+        }
+
+        for (Map.Entry<Long, Integer> req : requiredByIngredientId.entrySet()) {
+            IngredientInventory inv = inventoryByIngredientId.get(req.getKey());
+            if (inv == null || inv.getQuantityOnHand() < req.getValue()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Insufficient inventory for one or more ingredients");
+            }
         }
 
         order.setOrderItems(orderItems);
         Order saved = orderRepository.save(order);
 
-        // Deduct ingredient inventory for every item in the order
-        for (OrderItem oi : orderItems) {
-            List<MenuItemIngredient> ingredients =
-                    menuItemIngredientRepository.findByMenuItemIdWithInventory(oi.getMenuItem().getMenuItemId());
-            for (MenuItemIngredient mii : ingredients) {
-                IngredientInventory inv = mii.getIngredient().getInventory();
-                if (inv != null) {
-                    int deduction = mii.getQuantityRequired().multiply(
-                            java.math.BigDecimal.valueOf(oi.getQuantity())).intValue();
-                    inv.setQuantityOnHand(Math.max(0, inv.getQuantityOnHand() - deduction));
-                    inventoryRepository.save(inv);
-                }
-            }
+        // Deduct inventory after full validation, in the same transaction.
+        for (Map.Entry<Long, Integer> req : requiredByIngredientId.entrySet()) {
+            IngredientInventory inv = inventoryByIngredientId.get(req.getKey());
+            inv.setQuantityOnHand(inv.getQuantityOnHand() - req.getValue());
+            inventoryRepository.save(inv);
         }
 
         return saved;

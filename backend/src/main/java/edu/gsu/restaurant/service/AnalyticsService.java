@@ -29,7 +29,7 @@ public class AnalyticsService {
             "       SUM(oi.quantity * oi.unit_price_at_time) AS revenue " +
             "FROM orders o " +
             "JOIN order_items oi ON o.order_id = oi.order_id " +
-            "WHERE o.status = 'PLACED' " +
+            "WHERE o.status <> 'CANCELLED' " +
             "  AND DATE(o.placed_at) BETWEEN :start AND :end " +
             "GROUP BY DATE(o.placed_at) " +
             "ORDER BY day";
@@ -54,7 +54,7 @@ public class AnalyticsService {
             "FROM order_items oi " +
             "JOIN menu_items mi ON oi.menu_item_id = mi.menu_item_id " +
             "JOIN orders o ON oi.order_id = o.order_id " +
-            "WHERE o.status = 'PLACED' " +
+            "WHERE o.status <> 'CANCELLED' " +
             "  AND DATE(o.placed_at) BETWEEN :start AND :end " +
             "GROUP BY mi.menu_item_id, mi.name " +
             "ORDER BY total_qty DESC";
@@ -78,7 +78,7 @@ public class AnalyticsService {
         String sql =
             "SELECT DATE(o.placed_at) AS day, COUNT(o.order_id) AS order_count " +
             "FROM orders o " +
-            "WHERE o.status = 'PLACED' " +
+            "WHERE o.status <> 'CANCELLED' " +
             "  AND DATE(o.placed_at) BETWEEN :start AND :end " +
             "GROUP BY DATE(o.placed_at) " +
             "ORDER BY day";
@@ -105,7 +105,7 @@ public class AnalyticsService {
             "LEFT JOIN menu_item_ingredients mii ON mii.ingredient_id = i.ingredient_id " +
             "LEFT JOIN order_items oi ON oi.menu_item_id = mii.menu_item_id " +
             "LEFT JOIN orders o ON o.order_id = oi.order_id " +
-            "    AND o.status = 'PLACED' " +
+            "    AND o.status <> 'CANCELLED' " +
             "    AND o.placed_at >= DATE_SUB(NOW(), INTERVAL :days DAY) " +
             "GROUP BY i.ingredient_id, i.name, i.unit, inv.quantity_on_hand " +
             "ORDER BY estimated_demand DESC";
