@@ -83,7 +83,7 @@ export default function AnalyticsTab() {
             onClick={handleApply}
             disabled={loading}
           >
-            {loading ? 'Loading…' : 'Apply'}
+            {loading ? 'Loading...' : 'Apply'}
           </button>
         </div>
       </div>
@@ -106,12 +106,12 @@ export default function AnalyticsTab() {
             ) : (
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart data={revenue}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid stroke="#ead8c2" strokeDasharray="4 4" />
                   <XAxis dataKey="date" />
-                  <YAxis tickFormatter={v => `$${v}`} />
-                  <Tooltip formatter={(v) => `$${(v as number).toFixed(2)}`} />
+                  <YAxis tickFormatter={value => `$${value}`} />
+                  <Tooltip formatter={value => `$${(value as number).toFixed(2)}`} />
                   <Legend />
-                  <Line type="monotone" dataKey="revenue" stroke="#4f86c6" dot={false} />
+                  <Line type="monotone" dataKey="revenue" stroke="#e85d04" strokeWidth={2.3} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             )}
@@ -124,12 +124,12 @@ export default function AnalyticsTab() {
             ) : (
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart data={orderVolume}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid stroke="#ead8c2" strokeDasharray="4 4" />
                   <XAxis dataKey="date" />
                   <YAxis allowDecimals={false} />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="orderCount" stroke="#5cb85c" dot={false} />
+                  <Line type="monotone" dataKey="orderCount" stroke="#1d6b3c" strokeWidth={2.2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             )}
@@ -142,12 +142,12 @@ export default function AnalyticsTab() {
             ) : (
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={topItems} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid stroke="#ead8c2" strokeDasharray="4 4" />
                   <XAxis type="number" />
                   <YAxis type="category" dataKey="name" width={120} />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="totalQuantity" name="Qty Sold" fill="#4f86c6" />
+                  <Bar dataKey="totalQuantity" name="Qty Sold" fill="#e85d04" />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -160,7 +160,7 @@ export default function AnalyticsTab() {
             ) : (
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={inventoryForecast} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid stroke="#ead8c2" strokeDasharray="4 4" />
                   <XAxis type="number" />
                   <YAxis type="category" dataKey="ingredientName" width={120} />
                   <Tooltip
@@ -170,14 +170,14 @@ export default function AnalyticsTab() {
                   />
                   <Legend />
                   <Bar dataKey="currentStock" name="Current Stock">
-                    {inventoryForecast.map((item, i) => (
+                    {inventoryForecast.map((item, index) => (
                       <Cell
-                        key={i}
-                        fill={item.belowThreshold ? '#d9534f' : '#5cb85c'}
+                        key={index}
+                        fill={item.belowThreshold ? '#d9534f' : '#1d6b3c'}
                       />
                     ))}
                   </Bar>
-                  <Bar dataKey="estimatedDemand" name="Est. Demand" fill="#f0ad4e" />
+                  <Bar dataKey="estimatedDemand" name="Est. Demand" fill="#f08739" />
                 </BarChart>
               </ResponsiveContainer>
             )}

@@ -2,34 +2,39 @@
   list-style: none;
   padding: 0;
   margin: 0;
+  display: grid;
+  gap: 0.45rem;
 }
 
 .ingredient-selector li {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.4rem;
-  color: var(--color-text);
-  font-size: var(--font-size-base);
+  border: 1px solid #ead8c2;
+  border-radius: 0.62rem;
+  padding: 0.45rem 0.55rem;
+  background: #fff;
 }
 
 .ingredient-selector li label {
-  flex: 1;
-  color: var(--color-text-secondary);
+  color: #4e4032;
+  font-size: 0.86rem;
 }
 
 .ingredient-selector .qty-input {
-  width: 80px;
-  padding: 0.3rem 0.5rem;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-base);
+  width: 84px;
+  padding: 0.28rem 0.45rem;
+  border: 1px solid #d9c7b3;
+  border-radius: 0.5rem;
+  font-size: 0.82rem;
   font-family: inherit;
-  color: var(--color-text);
-  background: var(--color-surface);
+  color: #2e251c;
+  background: #fffaf5;
 }
 
 .ingredient-selector .qty-input:focus {
-  border-color: var(--color-primary);
-  outline: none;
+  border-color: #e85d04;
+  outline: 2px solid rgba(232, 93, 4, 0.18);
+  outline-offset: 1px;
 }

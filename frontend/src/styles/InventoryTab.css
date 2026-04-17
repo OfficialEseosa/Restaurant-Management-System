@@ -1,41 +1,16 @@
-/* Shared classes (.tab-container, .tab-header, .data-table, .alert-banner,
-   .empty-text, .btn-edit) are defined in IngredientsTab.css */
-
 .quantity-input {
-  width: 80px;
-  padding: 0.3rem 0.5rem;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-base);
+  width: 92px;
+  padding: 0.34rem 0.5rem;
+  border: 1px solid #d9c7b3;
+  border-radius: 0.55rem;
+  font-size: 0.86rem;
   font-family: inherit;
-  color: var(--color-text);
-  background: var(--color-surface);
-  transition: border-color 0.15s;
+  color: #2e251c;
+  background: #fff;
 }
 
 .quantity-input:focus {
-  border-color: var(--color-primary);
-  outline: none;
-}
-
-.row-error {
-  font-size: var(--font-size-xs);
-  color: var(--color-error);
-  display: block;
-  padding: 0.2rem 0.75rem;
-}
-
-.btn-save {
-  padding: 0.35rem 0.85rem;
-  border: 1px solid var(--color-success);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  color: var(--color-success);
-  cursor: pointer;
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-}
-
-.btn-save:hover {
-  background: var(--color-success-bg);
+  border-color: #e85d04;
+  outline: 2px solid rgba(232, 93, 4, 0.18);
+  outline-offset: 1px;
 }

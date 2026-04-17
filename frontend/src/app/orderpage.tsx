@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { MenuItemWithAvailability } from '../api/menuApi';
+import type { MenuCategory, MenuItemWithAvailability } from '../api/menuApi';
 import { getMenuItemsWithAvailability } from '../api/menuApi';
 import type { CartEntry } from '../api/customerOrderApi';
 import MenuBrowser from './components/MenuBrowser';
@@ -9,12 +9,76 @@ import OrderHistory from './components/OrderHistory';
 import '../styles/orderpage.css';
 
 type Tab = 'menu' | 'history';
+type UiCategory = 'ALL' | MenuCategory;
+
+const CATEGORY_OPTIONS: Array<{ key: UiCategory; label: string }> = [
+  { key: 'ALL', label: 'All' },
+  { key: 'BURGERS', label: 'Burgers' },
+  { key: 'SANDWICHES', label: 'Sandwiches' },
+  { key: 'FRIES', label: 'Fries' },
+  { key: 'SIDES', label: 'Sides' },
+  { key: 'BREAKFAST', label: 'Breakfast' },
+  { key: 'SOUPS', label: 'Soups' },
+  { key: 'SWEETS', label: 'Sweets' },
+  { key: 'DRINKS', label: 'Drinks' },
+];
+
+const CATEGORY_LABELS: Record<MenuCategory, string> = {
+  BURGERS: 'Burgers',
+  SANDWICHES: 'Sandwiches',
+  FRIES: 'Fries',
+  SIDES: 'Sides',
+  BREAKFAST: 'Breakfast',
+  SOUPS: 'Soups',
+  SWEETS: 'Sweets',
+  DRINKS: 'Drinks',
+};
+
+const VALID_CATEGORIES: MenuCategory[] = [
+  'BURGERS',
+  'SANDWICHES',
+  'FRIES',
+  'SIDES',
+  'BREAKFAST',
+  'SOUPS',
+  'SWEETS',
+  'DRINKS',
+];
+
+function normalizeCategory(category: string | null | undefined): MenuCategory {
+  if (category && VALID_CATEGORIES.includes(category as MenuCategory)) {
+    return category as MenuCategory;
+  }
+  return 'SIDES';
+}
+
+function readStoredUser(): { userId: number; username: string } | null {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem('user') || 'null');
+    if (
+      typeof parsed === 'object'
+      && parsed !== null
+      && 'userId' in parsed
+      && 'username' in parsed
+      && typeof parsed.userId === 'number'
+      && typeof parsed.username === 'string'
+    ) {
+      return { userId: parsed.userId, username: parsed.username };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 export default function OrderPage() {
   const [tab, setTab] = useState<Tab>('menu');
   const [profileOpen, setProfileOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<UiCategory>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
   const profileRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const user = useMemo(() => readStoredUser(), []);
 
   function handleLogout() {
     localStorage.removeItem('user');
@@ -25,19 +89,93 @@ export default function OrderPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user') || 'null');
     if (!user) { navigate('/login'); return; }
 
     async function fetchMenu() {
       try {
         const data = await getMenuItemsWithAvailability();
-        setMenuItems(data);
+        setMenuItems(
+          data.map(item => ({
+            ...item,
+            category: normalizeCategory((item as { category?: string | null }).category),
+          })),
+        );
       } catch {
         setError('Failed to load menu. Please try again.');
       }
     }
     fetchMenu();
-  }, [navigate]);
+  }, [navigate, user]);
+
+  useEffect(() => {
+    if (!profileOpen) return;
+
+    function handlePointerDown(event: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setProfileOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setProfileOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [profileOpen]);
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<UiCategory, number> = {
+      ALL: menuItems.length,
+      BURGERS: 0,
+      SANDWICHES: 0,
+      FRIES: 0,
+      SIDES: 0,
+      BREAKFAST: 0,
+      SOUPS: 0,
+      SWEETS: 0,
+      DRINKS: 0,
+    };
+
+    for (const item of menuItems) {
+      counts[item.category] += 1;
+    }
+    return counts;
+  }, [menuItems]);
+
+  const filteredMenuItems = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    return menuItems
+      .filter(item => (activeCategory === 'ALL' ? true : item.category === activeCategory))
+      .filter(item => {
+        if (!normalizedQuery) return true;
+        const haystack = `${item.name} ${item.description}`.toLowerCase();
+        return haystack.includes(normalizedQuery);
+      })
+      .sort((a, b) => {
+        if (a.available !== b.available) {
+          return a.available ? -1 : 1;
+        }
+        return a.name.localeCompare(b.name);
+      });
+  }, [activeCategory, menuItems, searchQuery]);
+
+  const availableCount = useMemo(
+    () => filteredMenuItems.filter(item => item.available).length,
+    [filteredMenuItems],
+  );
+
+  const cartItemCount = useMemo(
+    () => cart.reduce((sum, entry) => sum + entry.quantity, 0),
+    [cart],
+  );
 
   function handleAddToCart(item: MenuItemWithAvailability): void {
     setCart(prev => {
@@ -67,8 +205,25 @@ export default function OrderPage() {
 
   return (
     <div className="order-page">
-      <header className="order-page__header">
-        <span className="order-page__header-title">Order</span>
+      <header className="order-page__topbar">
+        <div className="order-page__brand-block">
+          <span className="order-page__brand-logo">RMS</span>
+          <div className="order-page__brand-copy">
+            <p className="order-page__brand-kicker">Customer Ordering</p>
+            <h1 className="order-page__brand-title">Build Your Meal</h1>
+          </div>
+        </div>
+
+        <div className="order-page__top-actions">
+          <div className="order-page__stats" aria-label="Ordering statistics">
+            <span className="order-page__stat">
+              <strong>{categoryCounts.ALL}</strong> menu items
+            </span>
+            <span className="order-page__stat">
+              <strong>{cartItemCount}</strong> in cart
+            </span>
+          </div>
+
         <div className="order-page__profile" ref={profileRef}>
           <button
             className="order-page__profile-btn"
@@ -77,13 +232,13 @@ export default function OrderPage() {
             aria-expanded={profileOpen}
             aria-haspopup="true"
           >
-            &#128100;
+            {(user?.username[0] ?? 'U').toUpperCase()}
           </button>
           {profileOpen && (
             <div className="order-page__profile-dropdown" role="menu">
               <div className="order-page__profile-info">
                 <span className="order-page__profile-name">
-                  {JSON.parse(localStorage.getItem('user') || '{}').username ?? 'Customer'}
+                  {user?.username ?? 'Customer'}
                 </span>
                 <span className="order-page__profile-role">Customer</span>
               </div>
@@ -97,6 +252,7 @@ export default function OrderPage() {
               </button>
             </div>
           )}
+        </div>
         </div>
       </header>
 
@@ -126,7 +282,54 @@ export default function OrderPage() {
 
         {tab === 'menu' && (
           <div className="order-page__menu-layout">
-            <MenuBrowser items={menuItems} onAddToCart={handleAddToCart} />
+            <section className="order-page__catalog">
+              <div className="order-page__catalog-header">
+                <div className="order-page__catalog-copy">
+                  <h2 className="order-page__catalog-title">Menu</h2>
+                  <p className="order-page__catalog-subtitle">
+                    Browse by category and build your cart. Unavailable items stay visible for transparency.
+                  </p>
+                </div>
+
+                <label className="order-page__search">
+                  <span className="order-page__search-label">Search</span>
+                  <input
+                    type="search"
+                    className="order-page__search-input"
+                    value={searchQuery}
+                    onChange={event => setSearchQuery(event.target.value)}
+                    placeholder="Search burgers, fries, shakes..."
+                    aria-label="Search menu items"
+                  />
+                </label>
+              </div>
+
+              <div className="order-page__category-row" role="tablist" aria-label="Menu categories">
+                {CATEGORY_OPTIONS.map(option => (
+                  <button
+                    key={option.key}
+                    className={`order-page__category-btn${activeCategory === option.key ? ' order-page__category-btn--active' : ''}`}
+                    onClick={() => setActiveCategory(option.key)}
+                    role="tab"
+                    aria-selected={activeCategory === option.key}
+                  >
+                    <span>{option.label}</span>
+                    <span className="order-page__category-count">{categoryCounts[option.key]}</span>
+                  </button>
+                ))}
+              </div>
+
+              <p className="order-page__results-meta">
+                Showing {filteredMenuItems.length} item(s), {availableCount} available now.
+              </p>
+
+              <MenuBrowser
+                items={filteredMenuItems}
+                onAddToCart={handleAddToCart}
+                categoryLabels={CATEGORY_LABELS}
+              />
+            </section>
+
             <CartPanel
               cart={cart}
               onUpdateQuantity={handleUpdateQuantity}
@@ -136,7 +339,11 @@ export default function OrderPage() {
           </div>
         )}
 
-        {tab === 'history' && <OrderHistory />}
+        {tab === 'history' && (
+          <div className="order-page__history-layout">
+            <OrderHistory />
+          </div>
+        )}
       </div>
     </div>
   );

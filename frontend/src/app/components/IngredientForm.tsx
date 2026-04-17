@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+﻿import { useState, useRef } from 'react';
 import type { Ingredient, NewIngredient } from '../../api/adminApi';
 import { createIngredient, updateIngredient, uploadImage } from '../../api/adminApi';
 import '../../styles/IngredientForm.css';
@@ -174,7 +174,7 @@ export default function IngredientForm({ ingredient, onSave, onClose }: Ingredie
               Cancel
             </button>
             <button type="submit" className="btn-submit" disabled={submitting}>
-              {submitting ? 'Saving…' : isEditMode ? 'Update' : 'Create'}
+              {submitting ? 'Saving...' : isEditMode ? 'Update' : 'Create'}
             </button>
           </div>
         </form>

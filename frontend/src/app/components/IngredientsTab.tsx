@@ -91,57 +91,59 @@ export default function IngredientsTab() {
       )}
 
       {loading ? (
-        <p className="empty-text">Loading ingredients…</p>
+        <p className="empty-text">Loading ingredients...</p>
       ) : ingredients.length === 0 ? (
         <p className="empty-text">No ingredients found. Create one to get started.</p>
       ) : (
-        <table className="data-table" aria-label="Ingredients table">
-          <thead>
-            <tr>
-              <th>Image</th>
-              <th>Name</th>
-              <th>Unit</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ingredients.map(ingredient => (
-              <tr key={ingredient.ingredientId}>
-                <td>
-                  {ingredient.imageUrl ? (
-                    <img
-                      src={ingredient.imageUrl}
-                      alt={ingredient.name}
-                      className="ingredient-img"
-                    />
-                  ) : (
-                    <div className="ingredient-img-placeholder" aria-label="No image">
-                      No Image
-                    </div>
-                  )}
-                </td>
-                <td>{ingredient.name}</td>
-                <td>{ingredient.unit}</td>
-                <td className="actions-cell">
-                  <button
-                    className="btn-edit"
-                    onClick={() => handleEdit(ingredient)}
-                    aria-label={`Edit ${ingredient.name}`}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="btn-delete"
-                    onClick={() => handleDelete(ingredient)}
-                    aria-label={`Delete ${ingredient.name}`}
-                  >
-                    Delete
-                  </button>
-                </td>
+        <div className="table-scroll">
+          <table className="data-table" aria-label="Ingredients table">
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Unit</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {ingredients.map(ingredient => (
+                <tr key={ingredient.ingredientId}>
+                  <td>
+                    {ingredient.imageUrl ? (
+                      <img
+                        src={ingredient.imageUrl}
+                        alt={ingredient.name}
+                        className="ingredient-img"
+                      />
+                    ) : (
+                      <div className="ingredient-img-placeholder" aria-label="No image">
+                        No Image
+                      </div>
+                    )}
+                  </td>
+                  <td>{ingredient.name}</td>
+                  <td>{ingredient.unit}</td>
+                  <td className="actions-cell">
+                    <button
+                      className="btn-edit"
+                      onClick={() => handleEdit(ingredient)}
+                      aria-label={`Edit ${ingredient.name}`}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="btn-delete"
+                      onClick={() => handleDelete(ingredient)}
+                      aria-label={`Delete ${ingredient.name}`}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {modalOpen && (

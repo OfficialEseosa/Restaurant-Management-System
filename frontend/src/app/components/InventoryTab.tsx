@@ -3,7 +3,6 @@ import type { IngredientWithStock } from '../../api/adminApi';
 import { getIngredientsWithStock, updateStock, logStockChange } from '../../api/adminApi';
 import '../../styles/InventoryTab.css';
 
-
 interface InventoryTabState {
   rows: IngredientWithStock[];
   pendingEdits: Record<number, string>;
@@ -23,7 +22,6 @@ export default function InventoryTab() {
     setLoading(true);
     setFetchError(null);
     try {
-      // TODO (John)
       const data = await getIngredientsWithStock();
       setRows(data);
     } catch {
@@ -58,7 +56,6 @@ export default function InventoryTab() {
     });
 
     try {
-      // TODO (John)
       await updateStock(row.ingredientId, newQuantity);
     } catch {
       setSaveErrors(prev => ({ ...prev, [row.ingredientId]: 'Failed to update stock. Please try again.' }));
@@ -67,7 +64,6 @@ export default function InventoryTab() {
 
     const user = JSON.parse(localStorage.getItem('user') || 'null');
     try {
-      // TODO (John)
       await logStockChange({
         adminUser: { userId: user?.userId ?? 0 },
         ingredient: { ingredientId: row.ingredientId },
@@ -103,59 +99,61 @@ export default function InventoryTab() {
       )}
 
       {loading ? (
-        <p className="empty-text">Loading inventory…</p>
+        <p className="empty-text">Loading inventory...</p>
       ) : rows.length === 0 ? (
         <p className="empty-text">No ingredients found.</p>
       ) : (
-        <table className="data-table" aria-label="Inventory table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Unit</th>
-              <th>Quantity on Hand</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(row => (
-              <React.Fragment key={row.ingredientId}>
-                <tr>
-                  <td>{row.name}</td>
-                  <td>{row.unit}</td>
-                  <td>
-                    <input
-                      type="number"
-                      min="0"
-                      className="quantity-input"
-                      value={pendingEdits[row.ingredientId] ?? String(row.quantityOnHand)}
-                      onChange={e => handleQuantityChange(row.ingredientId, e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') handleSave(row);
-                      }}
-                      aria-label={`Quantity for ${row.name}`}
-                    />
-                  </td>
-                  <td className="actions-cell">
-                    <button
-                      className="btn-save"
-                      onClick={() => handleSave(row)}
-                      aria-label={`Save ${row.name}`}
-                    >
-                      Save
-                    </button>
-                  </td>
-                </tr>
-                {saveErrors[row.ingredientId] && (
+        <div className="table-scroll">
+          <table className="data-table" aria-label="Inventory table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Unit</th>
+                <th>Quantity on Hand</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(row => (
+                <React.Fragment key={row.ingredientId}>
                   <tr>
-                    <td colSpan={4}>
-                      <span className="row-error">{saveErrors[row.ingredientId]}</span>
+                    <td>{row.name}</td>
+                    <td>{row.unit}</td>
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        className="quantity-input"
+                        value={pendingEdits[row.ingredientId] ?? String(row.quantityOnHand)}
+                        onChange={e => handleQuantityChange(row.ingredientId, e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') handleSave(row);
+                        }}
+                        aria-label={`Quantity for ${row.name}`}
+                      />
+                    </td>
+                    <td className="actions-cell">
+                      <button
+                        className="btn-save"
+                        onClick={() => handleSave(row)}
+                        aria-label={`Save ${row.name}`}
+                      >
+                        Save
+                      </button>
                     </td>
                   </tr>
-                )}
-              </React.Fragment>
-            ))}
-          </tbody>
-        </table>
+                  {saveErrors[row.ingredientId] && (
+                    <tr>
+                      <td colSpan={4}>
+                        <span className="row-error">{saveErrors[row.ingredientId]}</span>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

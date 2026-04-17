@@ -1,16 +1,24 @@
 import type { MenuItemWithAvailability } from '../../api/menuApi';
 import '../../styles/MenuBrowser.css';
 
+type MenuBrowserItem = MenuItemWithAvailability & {
+  category?: string;
+};
+
 interface MenuBrowserProps {
-  items: MenuItemWithAvailability[];
+  items: MenuBrowserItem[];
   onAddToCart: (item: MenuItemWithAvailability) => void;
+  categoryLabels?: Record<string, string>;
 }
 
-export default function MenuBrowser({ items, onAddToCart }: MenuBrowserProps) {
+export default function MenuBrowser({ items, onAddToCart, categoryLabels }: MenuBrowserProps) {
   return (
     <div className="menu-browser">
       {items.length === 0 ? (
-        <p className="menu-browser__empty">No menu items available.</p>
+        <div className="menu-browser__empty">
+          <h3 className="menu-browser__empty-title">No matches found</h3>
+          <p className="menu-browser__empty-text">Try another category or search term.</p>
+        </div>
       ) : (
         <div className="menu-browser__grid">
           {items.map(item => (
@@ -32,14 +40,23 @@ export default function MenuBrowser({ items, onAddToCart }: MenuBrowserProps) {
               <div className="menu-browser__card-body">
                 <h3 className="menu-browser__card-name">{item.name}</h3>
                 <p className="menu-browser__card-description">{item.description}</p>
+
+                <div className="menu-browser__meta-row">
+                  {item.category && (
+                    <span className="menu-browser__category-chip">
+                      {categoryLabels?.[item.category] ?? item.category}
+                    </span>
+                  )}
+                  <span
+                    className={`menu-browser__availability${item.available === false ? ' menu-browser__availability--unavailable' : ''}`}
+                  >
+                    {item.available === false ? 'Unavailable' : 'Available'}
+                  </span>
+                </div>
+
                 <p className="menu-browser__card-price">
                   ${item.price.toFixed(2)}
                 </p>
-                <span
-                  className={`menu-browser__badge${item.available === false ? ' menu-browser__badge--unavailable' : ' menu-browser__badge--available'}`}
-                >
-                  {item.available === false ? 'Unavailable' : 'Available'}
-                </span>
               </div>
               <button
                 className="menu-browser__add-btn"
@@ -47,7 +64,7 @@ export default function MenuBrowser({ items, onAddToCart }: MenuBrowserProps) {
                 disabled={item.available === false}
                 aria-label={`Add ${item.name} to cart`}
               >
-                Add to Cart
+                Add Item
               </button>
             </div>
           ))}

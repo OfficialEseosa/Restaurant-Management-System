@@ -11,7 +11,6 @@ interface StockChangeLogEntry {
 }
 
 const getAllStockLogs = (): Promise<StockChangeLogEntry[]> =>
-  // TODO (John)
   api.get<StockChangeLogEntry[]>('/api/stock-change-logs').then(r => r.data);
 
 export function sortLogsDescending(logs: StockChangeLogEntry[]): StockChangeLogEntry[] {
@@ -45,7 +44,6 @@ export default function StockLogTab() {
     setLoading(true);
     setFetchError(null);
     try {
-      // TODO (John)
       const rawLogs = await getAllStockLogs();
       setLogs(sortLogsDescending(rawLogs));
     } catch {
@@ -79,34 +77,36 @@ export default function StockLogTab() {
       )}
 
       {loading ? (
-        <p className="empty-text">Loading stock log…</p>
+        <p className="empty-text">Loading stock log...</p>
       ) : logs.length === 0 ? (
         <p className="empty-text">No stock changes have been recorded yet.</p>
       ) : (
-        <table className="data-table" aria-label="Stock log table">
-          <thead>
-            <tr>
-              <th>Ingredient</th>
-              <th>Change</th>
-              <th>Admin</th>
-              <th>Timestamp</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.map(entry => (
-              <tr key={entry.stockChangeId}>
-                <td>{entry.ingredient.name}</td>
-                <td>
-                  <span className={getChangeClass(entry.changeAmount)}>
-                    {formatChangeAmount(entry.changeAmount)}
-                  </span>
-                </td>
-                <td>{entry.adminUser.username}</td>
-                <td>{formatTimestamp(entry.changedAt)}</td>
+        <div className="table-scroll">
+          <table className="data-table" aria-label="Stock log table">
+            <thead>
+              <tr>
+                <th>Ingredient</th>
+                <th>Change</th>
+                <th>Admin</th>
+                <th>Timestamp</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {logs.map(entry => (
+                <tr key={entry.stockChangeId}>
+                  <td>{entry.ingredient.name}</td>
+                  <td>
+                    <span className={getChangeClass(entry.changeAmount)}>
+                      {formatChangeAmount(entry.changeAmount)}
+                    </span>
+                  </td>
+                  <td>{entry.adminUser.username}</td>
+                  <td>{formatTimestamp(entry.changedAt)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

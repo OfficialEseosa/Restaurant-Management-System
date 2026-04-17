@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { CartEntry } from '../../api/customerOrderApi';
 import { placeOrder } from '../../api/customerOrderApi';
 import '../../styles/CartPanel.css';
@@ -17,34 +17,63 @@ export default function CartPanel({
   onRemoveItem,
   onOrderPlaced,
 }: CartPanelProps) {
+  const [placingOrder, setPlacingOrder] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const cartTotal = cart.reduce(
+  const itemCount = useMemo(
+    () => cart.reduce((sum, entry) => sum + entry.quantity, 0),
+    [cart],
+  );
+
+  const subTotal = cart.reduce(
     (sum, entry) => sum + entry.quantity * entry.menuItem.price,
     0
   );
+  const tax = subTotal * 0.08;
+  const serviceFee = cart.length > 0 ? 1.5 : 0;
+  const orderTotal = subTotal + tax + serviceFee;
+
+  function handleQuantityChange(menuItemId: number, quantity: number): void {
+    if (quantity <= 0) {
+      onRemoveItem(menuItemId);
+      return;
+    }
+    onUpdateQuantity(menuItemId, quantity);
+  }
 
   async function handlePlaceOrder() {
     setSuccess(null);
     setError(null);
+    setPlacingOrder(true);
     const user = JSON.parse(localStorage.getItem('user') || 'null');
-    if (!user) { setError('You must be logged in to place an order.'); return; }
+    if (!user) {
+      setError('You must be logged in to place an order.');
+      setPlacingOrder(false);
+      return;
+    }
+
     try {
       await placeOrder({
         userId: user.userId,
         items: cart.map(e => ({ menuItemId: e.menuItem.menuItemId, quantity: e.quantity })),
       });
       onOrderPlaced();
-      setSuccess('Order placed successfully!');
+      setSuccess('Order placed. We are preparing it now.');
     } catch {
       setError('Failed to place order. Please try again.');
+    } finally {
+      setPlacingOrder(false);
     }
   }
 
   return (
     <div className="cart-panel">
-      <h2 className="cart-panel__title">Your Cart</h2>
+      <div className="cart-panel__header">
+        <h2 className="cart-panel__title">Checkout</h2>
+        <span className="cart-panel__count-badge">{itemCount} item(s)</span>
+      </div>
+      <p className="cart-panel__subtitle">Review your order before placing it.</p>
 
       {success && (
         <div role="status" className="cart-panel__success">
@@ -67,16 +96,20 @@ export default function CartPanel({
               <div className="cart-panel__item-info">
                 <span className="cart-panel__item-name">{entry.menuItem.name}</span>
                 <span className="cart-panel__item-unit-price">
-                  ${entry.menuItem.price.toFixed(2)} each
+                  ${(entry.quantity * entry.menuItem.price).toFixed(2)}
                 </span>
               </div>
               <div className="cart-panel__item-controls">
-                <label
-                  htmlFor={`qty-${entry.menuItem.menuItemId}`}
-                  className="cart-panel__qty-label"
-                >
-                  Qty:
-                </label>
+                <span className="cart-panel__qty-label">${entry.menuItem.price.toFixed(2)} each</span>
+                <div className="cart-panel__qty-group" role="group" aria-label={`Quantity controls for ${entry.menuItem.name}`}>
+                  <button
+                    type="button"
+                    className="cart-panel__qty-btn"
+                    onClick={() => handleQuantityChange(entry.menuItem.menuItemId, entry.quantity - 1)}
+                    aria-label={`Decrease quantity for ${entry.menuItem.name}`}
+                  >
+                    -
+                  </button>
                 <input
                   id={`qty-${entry.menuItem.menuItemId}`}
                   type="number"
@@ -86,15 +119,22 @@ export default function CartPanel({
                   onChange={e => {
                     const val = parseInt(e.target.value, 10);
                     if (!isNaN(val) && val >= 1) {
-                      onUpdateQuantity(entry.menuItem.menuItemId, val);
+                      handleQuantityChange(entry.menuItem.menuItemId, val);
                     }
                   }}
                   aria-label={`Quantity for ${entry.menuItem.name}`}
                 />
-                <span className="cart-panel__item-subtotal">
-                  ${(entry.quantity * entry.menuItem.price).toFixed(2)}
-                </span>
+                  <button
+                    type="button"
+                    className="cart-panel__qty-btn"
+                    onClick={() => handleQuantityChange(entry.menuItem.menuItemId, entry.quantity + 1)}
+                    aria-label={`Increase quantity for ${entry.menuItem.name}`}
+                  >
+                    +
+                  </button>
+                </div>
                 <button
+                  type="button"
                   className="cart-panel__remove-btn"
                   onClick={() => onRemoveItem(entry.menuItem.menuItemId)}
                   aria-label={`Remove ${entry.menuItem.name} from cart`}
@@ -107,17 +147,34 @@ export default function CartPanel({
         </ul>
       )}
 
+      <div className="cart-panel__summary">
+        <div className="cart-panel__summary-row">
+          <span>Subtotal</span>
+          <strong>${subTotal.toFixed(2)}</strong>
+        </div>
+        <div className="cart-panel__summary-row">
+          <span>Tax (8%)</span>
+          <strong>${tax.toFixed(2)}</strong>
+        </div>
+        <div className="cart-panel__summary-row">
+          <span>Service fee</span>
+          <strong>${serviceFee.toFixed(2)}</strong>
+        </div>
+        <div className="cart-panel__summary-row cart-panel__summary-row--total">
+          <span>Total</span>
+          <strong>${orderTotal.toFixed(2)}</strong>
+        </div>
+      </div>
+
       <div className="cart-panel__footer">
-        <span className="cart-panel__total">
-          Total: <strong>${cartTotal.toFixed(2)}</strong>
-        </span>
         <button
           className="cart-panel__place-order-btn"
           onClick={handlePlaceOrder}
-          disabled={cart.length === 0}
+          disabled={cart.length === 0 || placingOrder}
         >
-          Place Order
+          {placingOrder ? 'Placing Order...' : 'Place Order'}
         </button>
+        <p className="cart-panel__eta">Estimated prep time: 15-20 minutes.</p>
       </div>
     </div>
   );
