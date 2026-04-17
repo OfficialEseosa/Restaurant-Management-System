@@ -147,12 +147,54 @@
   font-size: 0.93rem;
 }
 
+.order-history__process-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  margin-bottom: 0.62rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 0.62rem;
+  border: 1px solid #f1dfcb;
+  background: #fff8ef;
+}
+
+.order-history__countdown {
+  color: #8a5a2f;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.order-history__cancel-btn {
+  border: 1px solid #e49f62;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #a14d13;
+  padding: 0.28rem 0.58rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.order-history__cancel-btn:hover:not(:disabled) {
+  background: #fff0e2;
+}
+
+.order-history__cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 @media (max-width: 760px) {
   .order-history__summary {
     grid-template-columns: 1fr;
   }
 
   .order-history__item-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .order-history__process-row {
     flex-direction: column;
     align-items: flex-start;
   }

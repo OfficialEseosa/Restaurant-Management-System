@@ -6,9 +6,11 @@ import type { CartEntry } from '../api/customerOrderApi';
 import MenuBrowser from './components/MenuBrowser';
 import CartPanel from './components/CartPanel';
 import OrderHistory from './components/OrderHistory';
+import OrderSummary from './components/OrderSummary';
 import '../styles/orderpage.css';
 
 type Tab = 'menu' | 'history';
+type View = 'menu' | 'checkout' | 'history';
 type UiCategory = 'ALL' | MenuCategory;
 
 const CATEGORY_OPTIONS: Array<{ key: UiCategory; label: string }> = [
@@ -73,6 +75,7 @@ function readStoredUser(): { userId: number; username: string } | null {
 
 export default function OrderPage() {
   const [tab, setTab] = useState<Tab>('menu');
+  const [view, setView] = useState<View>('menu');
   const [profileOpen, setProfileOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<UiCategory>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -259,14 +262,14 @@ export default function OrderPage() {
       <nav className="order-page__tabs" aria-label="Order page tabs">
         <button
           className={`order-page__tab${tab === 'menu' ? ' order-page__tab--active' : ''}`}
-          onClick={() => setTab('menu')}
+          onClick={() => { setTab('menu'); setView('menu'); }}
           aria-current={tab === 'menu' ? 'page' : undefined}
         >
           Menu
         </button>
         <button
           className={`order-page__tab${tab === 'history' ? ' order-page__tab--active' : ''}`}
-          onClick={() => setTab('history')}
+          onClick={() => { setTab('history'); setView('history'); }}
           aria-current={tab === 'history' ? 'page' : undefined}
         >
           My Orders
@@ -280,7 +283,16 @@ export default function OrderPage() {
           </div>
         )}
 
-        {tab === 'menu' && (
+        {view === 'checkout' && (
+          <OrderSummary
+            cart={cart}
+            onBack={() => setView('menu')}
+            onViewOrders={() => { setCart([]); setTab('history'); setView('history'); }}
+            onBackToMenu={() => { setCart([]); setView('menu'); }}
+          />
+        )}
+
+        {view === 'menu' && (
           <div className="order-page__menu-layout">
             <section className="order-page__catalog">
               <div className="order-page__catalog-header">
@@ -334,12 +346,12 @@ export default function OrderPage() {
               cart={cart}
               onUpdateQuantity={handleUpdateQuantity}
               onRemoveItem={handleRemoveItem}
-              onOrderPlaced={() => setCart([])}
+              onCheckout={() => setView('checkout')}
             />
           </div>
         )}
 
-        {tab === 'history' && (
+        {view === 'history' && (
           <div className="order-page__history-layout">
             <OrderHistory />
           </div>

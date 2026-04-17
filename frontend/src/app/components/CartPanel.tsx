@@ -1,26 +1,20 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type { CartEntry } from '../../api/customerOrderApi';
-import { placeOrder } from '../../api/customerOrderApi';
 import '../../styles/CartPanel.css';
-
 
 interface CartPanelProps {
   cart: CartEntry[];
   onUpdateQuantity: (menuItemId: number, quantity: number) => void;
   onRemoveItem: (menuItemId: number) => void;
-  onOrderPlaced: () => void;
+  onCheckout: () => void;
 }
 
 export default function CartPanel({
   cart,
   onUpdateQuantity,
   onRemoveItem,
-  onOrderPlaced,
+  onCheckout,
 }: CartPanelProps) {
-  const [placingOrder, setPlacingOrder] = useState(false);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
   const itemCount = useMemo(
     () => cart.reduce((sum, entry) => sum + entry.quantity, 0),
     [cart],
@@ -28,7 +22,7 @@ export default function CartPanel({
 
   const subTotal = cart.reduce(
     (sum, entry) => sum + entry.quantity * entry.menuItem.price,
-    0
+    0,
   );
   const tax = subTotal * 0.08;
   const serviceFee = cart.length > 0 ? 1.5 : 0;
@@ -42,50 +36,13 @@ export default function CartPanel({
     onUpdateQuantity(menuItemId, quantity);
   }
 
-  async function handlePlaceOrder() {
-    setSuccess(null);
-    setError(null);
-    setPlacingOrder(true);
-    const user = JSON.parse(localStorage.getItem('user') || 'null');
-    if (!user) {
-      setError('You must be logged in to place an order.');
-      setPlacingOrder(false);
-      return;
-    }
-
-    try {
-      await placeOrder({
-        userId: user.userId,
-        items: cart.map(e => ({ menuItemId: e.menuItem.menuItemId, quantity: e.quantity })),
-      });
-      onOrderPlaced();
-      setSuccess('Order placed. We are preparing it now.');
-    } catch {
-      setError('Failed to place order. Please try again.');
-    } finally {
-      setPlacingOrder(false);
-    }
-  }
-
   return (
     <div className="cart-panel">
       <div className="cart-panel__header">
-        <h2 className="cart-panel__title">Checkout</h2>
+        <h2 className="cart-panel__title">Your Cart</h2>
         <span className="cart-panel__count-badge">{itemCount} item(s)</span>
       </div>
-      <p className="cart-panel__subtitle">Review your order before placing it.</p>
-
-      {success && (
-        <div role="status" className="cart-panel__success">
-          {success}
-        </div>
-      )}
-
-      {error && (
-        <div role="alert" className="cart-panel__error">
-          {error}
-        </div>
-      )}
+      <p className="cart-panel__subtitle">Add items from the menu, then checkout when ready.</p>
 
       {cart.length === 0 ? (
         <p className="cart-panel__empty">Your cart is empty.</p>
@@ -110,20 +67,20 @@ export default function CartPanel({
                   >
                     -
                   </button>
-                <input
-                  id={`qty-${entry.menuItem.menuItemId}`}
-                  type="number"
-                  min={1}
-                  value={entry.quantity}
-                  className="cart-panel__qty-input"
-                  onChange={e => {
-                    const val = parseInt(e.target.value, 10);
-                    if (!isNaN(val) && val >= 1) {
-                      handleQuantityChange(entry.menuItem.menuItemId, val);
-                    }
-                  }}
-                  aria-label={`Quantity for ${entry.menuItem.name}`}
-                />
+                  <input
+                    id={`qty-${entry.menuItem.menuItemId}`}
+                    type="number"
+                    min={1}
+                    value={entry.quantity}
+                    className="cart-panel__qty-input"
+                    onChange={e => {
+                      const val = parseInt(e.target.value, 10);
+                      if (!isNaN(val) && val >= 1) {
+                        handleQuantityChange(entry.menuItem.menuItemId, val);
+                      }
+                    }}
+                    aria-label={`Quantity for ${entry.menuItem.name}`}
+                  />
                   <button
                     type="button"
                     className="cart-panel__qty-btn"
@@ -169,12 +126,12 @@ export default function CartPanel({
       <div className="cart-panel__footer">
         <button
           className="cart-panel__place-order-btn"
-          onClick={handlePlaceOrder}
-          disabled={cart.length === 0 || placingOrder}
+          onClick={onCheckout}
+          disabled={cart.length === 0}
         >
-          {placingOrder ? 'Placing Order...' : 'Place Order'}
+          Checkout &rarr;
         </button>
-        <p className="cart-panel__eta">Estimated prep time: 15-20 minutes.</p>
+        <p className="cart-panel__eta">Estimated prep time: 15–20 minutes.</p>
       </div>
     </div>
   );

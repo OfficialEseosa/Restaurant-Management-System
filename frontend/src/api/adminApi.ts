@@ -1,4 +1,5 @@
 import api from './axios';
+import type { AxiosError } from 'axios';
 
 // ---------- Ingredients ----------
 
@@ -42,8 +43,25 @@ export interface IngredientWithStock extends Ingredient {
 export const getAllInventory = () =>
   api.get<InventoryRecord[]>('/api/inventory').then(r => r.data);
 
-export const updateStock = (ingredientId: number, quantityOnHand: number) =>
-  api.put<InventoryRecord>(`/api/inventory/${ingredientId}`, { quantityOnHand }).then(r => r.data);
+const createInventoryRow = (ingredientId: number, quantityOnHand: number) =>
+  api.post<InventoryRecord>('/api/inventory', {
+    ingredient: { ingredientId },
+    quantityOnHand,
+  }).then(r => r.data);
+
+export const updateStock = async (ingredientId: number, quantityOnHand: number) => {
+  try {
+    const response = await api.put<InventoryRecord>(`/api/inventory/${ingredientId}`, { quantityOnHand });
+    return response.data;
+  } catch (err: unknown) {
+    const status = (err as AxiosError).response?.status;
+    // Backwards-compatible fallback for backends that only support inventory row creation via POST.
+    if (status === 404 || status === 500) {
+      return createInventoryRow(ingredientId, quantityOnHand);
+    }
+    throw err;
+  }
+};
 
 /**
  * Fetch ingredients + inventory in parallel and join them by ingredientId.

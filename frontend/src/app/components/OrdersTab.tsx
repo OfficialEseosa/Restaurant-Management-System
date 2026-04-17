@@ -1,12 +1,26 @@
-import { Fragment, useEffect, useState, type ChangeEvent } from 'react';
+import { useEffect, useState, type ChangeEvent } from 'react';
 import type { Order, OrderStatus } from '../../api/orderApi';
-import { getAllOrders, calcOrderTotal, updateOrderStatus } from '../../api/orderApi';
+import {
+  calcOrderTotal,
+  getAllOrders,
+  getCancellationRemainingSeconds,
+} from '../../api/orderApi';
 import '../../styles/OrdersTab.css';
 
 const STATUS_OPTIONS: OrderStatus[] = ['PLACED', 'READY', 'COMPLETE', 'CANCELLED'];
+const REFRESH_INTERVAL_MS = 2000;
 
-function formatStatus(status: OrderStatus): string {
+function formatStatus(status: string): string {
   return `${status.charAt(0)}${status.slice(1).toLowerCase()}`;
+}
+
+function statusClassName(status: string): string {
+  const normalized = status.toLowerCase();
+  if (normalized === 'placed') return 'orders-tab__status orders-tab__status--placed';
+  if (normalized === 'ready') return 'orders-tab__status orders-tab__status--ready';
+  if (normalized === 'complete') return 'orders-tab__status orders-tab__status--complete';
+  if (normalized === 'cancelled') return 'orders-tab__status orders-tab__status--cancelled';
+  return 'orders-tab__status';
 }
 
 export default function OrdersTab() {
@@ -14,14 +28,13 @@ export default function OrdersTab() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [filter, setFilter] = useState<OrderStatus | ''>('');
-  const [actionErrors, setActionErrors] = useState<Record<number, string>>({});
+  const [now, setNow] = useState(Date.now());
 
   async function fetchOrders(status?: OrderStatus) {
-    setLoading(true);
-    setFetchError(null);
     try {
       const data = await getAllOrders(status);
       setOrders(data);
+      setFetchError(null);
     } catch {
       setFetchError('Failed to load orders. Please try again.');
     } finally {
@@ -30,28 +43,26 @@ export default function OrdersTab() {
   }
 
   useEffect(() => {
-    fetchOrders();
+    setLoading(true);
+    fetchOrders(filter || undefined);
+
+    const refreshId = window.setInterval(() => {
+      fetchOrders(filter || undefined);
+    }, REFRESH_INTERVAL_MS);
+
+    return () => window.clearInterval(refreshId);
+  }, [filter]);
+
+  useEffect(() => {
+    const tickId = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(tickId);
   }, []);
 
   function handleFilterChange(e: ChangeEvent<HTMLSelectElement>) {
-    const val = e.target.value as OrderStatus | '';
-    setFilter(val);
-    fetchOrders(val || undefined);
-  }
-
-  async function handleStatusChange(orderId: number, status: OrderStatus) {
-    setActionErrors(prev => {
-      const next = { ...prev };
-      delete next[orderId];
-      return next;
-    });
-
-    try {
-      const updated = await updateOrderStatus(orderId, status);
-      setOrders(prev => prev.map(o => (o.orderId === orderId ? { ...o, status: updated.status } : o)));
-    } catch {
-      setActionErrors(prev => ({ ...prev, [orderId]: 'Failed to update status.' }));
-    }
+    setFilter(e.target.value as OrderStatus | '');
   }
 
   return (
@@ -90,9 +101,11 @@ export default function OrdersTab() {
               </tr>
             </thead>
             <tbody>
-              {orders.map(order => (
-                <Fragment key={order.orderId}>
-                  <tr>
+              {orders.map(order => {
+                const remainingSeconds = getCancellationRemainingSeconds(order, now);
+
+                return (
+                  <tr key={order.orderId}>
                     <td>#{order.orderId}</td>
                     <td>{new Date(order.placedAt).toLocaleString()}</td>
                     <td>
@@ -106,27 +119,22 @@ export default function OrdersTab() {
                     </td>
                     <td>${calcOrderTotal(order).toFixed(2)}</td>
                     <td>
-                      <select
-                        className="orders-tab__status-select"
-                        value={order.status}
-                        aria-label={`Status for order ${order.orderId}`}
-                        onChange={e => handleStatusChange(order.orderId, e.target.value as OrderStatus)}
-                      >
-                        {STATUS_OPTIONS.map(status => (
-                          <option key={status} value={status}>{formatStatus(status)}</option>
-                        ))}
-                      </select>
+                      <div className="orders-tab__status-cell">
+                        <span className={statusClassName(order.status)}>
+                          {formatStatus(order.status)}
+                        </span>
+                        {order.status === 'PLACED' && (
+                          <span className="orders-tab__countdown">
+                            {remainingSeconds > 0
+                              ? `Auto-completes in ${remainingSeconds}s`
+                              : 'Completing...'}
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
-                  {actionErrors[order.orderId] && (
-                    <tr>
-                      <td colSpan={5}>
-                        <span className="row-error">{actionErrors[order.orderId]}</span>
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

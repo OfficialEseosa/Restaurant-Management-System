@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react';
 import type { Order } from '../../api/customerOrderApi';
-import { calcOrderTotal, getOrdersByUser } from '../../api/customerOrderApi';
+import {
+  calcOrderTotal,
+  cancelOrder,
+  getCancellationRemainingSeconds,
+  getOrdersByUser,
+} from '../../api/customerOrderApi';
 import '../../styles/OrderHistory.css';
+
+const REFRESH_INTERVAL_MS = 2000;
 
 function statusClassName(status: string): string {
   const normalized = status.toLowerCase();
@@ -16,24 +23,62 @@ export default function OrderHistory() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [cancelingOrderId, setCancelingOrderId] = useState<number | null>(null);
+  const [now, setNow] = useState(Date.now());
+
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const userId: number | null = typeof user?.userId === 'number' ? user.userId : null;
+
+  async function fetchOrders() {
+    if (!userId) return;
+
+    setError(null);
+    try {
+      const data = await getOrdersByUser(userId);
+      setOrders(data);
+    } catch {
+      setError('Failed to load order history.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function fetchOrders() {
-      const user = JSON.parse(localStorage.getItem('user') || 'null');
-      if (!user) return;
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await getOrdersByUser(user.userId);
-        setOrders(data);
-      } catch {
-        setError('Failed to load order history.');
-      } finally {
-        setLoading(false);
-      }
-    }
+    if (!userId) return;
+
+    setLoading(true);
     fetchOrders();
+
+    const refreshId = window.setInterval(() => {
+      fetchOrders();
+    }, REFRESH_INTERVAL_MS);
+
+    return () => window.clearInterval(refreshId);
+  }, [userId]);
+
+  useEffect(() => {
+    const tickId = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(tickId);
   }, []);
+
+  async function handleCancel(orderId: number) {
+    if (!userId) return;
+
+    setCancelError(null);
+    setCancelingOrderId(orderId);
+    try {
+      await cancelOrder(orderId, userId);
+      await fetchOrders();
+    } catch {
+      setCancelError('Could not cancel this order. The grace window may have ended.');
+    } finally {
+      setCancelingOrderId(null);
+    }
+  }
 
   const totalSpent = orders.reduce((sum, order) => sum + calcOrderTotal(order), 0);
   const totalItems = orders.reduce(
@@ -72,35 +117,65 @@ export default function OrderHistory() {
         </div>
       )}
 
+      {cancelError && (
+        <div role="alert" className="order-history__error">
+          {cancelError}
+        </div>
+      )}
+
       {!error && orders.length === 0 && (
         <p className="order-history__empty">No orders yet.</p>
       )}
 
       {orders.length > 0 && (
         <ul className="order-history__list">
-          {orders.map(order => (
-            <li key={order.orderId} className="order-history__item">
-              <div className="order-history__item-header">
-                <span className="order-history__date">
-                  {new Date(order.placedAt).toLocaleString()}
-                </span>
-                <span className={`order-history__status ${statusClassName(order.status)}`}>
-                  {order.status}
-                </span>
-              </div>
-              <ul className="order-history__lines">
-                {order.orderItems.map(line => (
-                  <li key={line.orderItemId} className="order-history__line">
-                    <span className="order-history__line-name">{line.menuItem.name}</span>
-                    <span className="order-history__line-qty">x {line.quantity}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="order-history__total">
-                Total: <strong>${calcOrderTotal(order).toFixed(2)}</strong>
-              </div>
-            </li>
-          ))}
+          {orders.map(order => {
+            const remainingSeconds = getCancellationRemainingSeconds(order, now);
+            const canCancel = order.status === 'PLACED' && remainingSeconds > 0;
+
+            return (
+              <li key={order.orderId} className="order-history__item">
+                <div className="order-history__item-header">
+                  <span className="order-history__date">
+                    {new Date(order.placedAt).toLocaleString()}
+                  </span>
+                  <span className={`order-history__status ${statusClassName(order.status)}`}>
+                    {order.status}
+                  </span>
+                </div>
+
+                {order.status === 'PLACED' && (
+                  <div className="order-history__process-row">
+                    <span className="order-history__countdown">
+                      {remainingSeconds > 0
+                        ? `Cancellation window: ${remainingSeconds}s remaining`
+                        : 'Finalizing order...'}
+                    </span>
+                    <button
+                      type="button"
+                      className="order-history__cancel-btn"
+                      onClick={() => handleCancel(order.orderId)}
+                      disabled={!canCancel || cancelingOrderId === order.orderId}
+                    >
+                      {cancelingOrderId === order.orderId ? 'Canceling...' : 'Cancel Order'}
+                    </button>
+                  </div>
+                )}
+
+                <ul className="order-history__lines">
+                  {order.orderItems.map(line => (
+                    <li key={line.orderItemId} className="order-history__line">
+                      <span className="order-history__line-name">{line.menuItem.name}</span>
+                      <span className="order-history__line-qty">x {line.quantity}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="order-history__total">
+                  Total: <strong>${calcOrderTotal(order).toFixed(2)}</strong>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

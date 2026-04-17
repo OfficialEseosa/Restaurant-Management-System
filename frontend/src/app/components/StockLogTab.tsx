@@ -4,7 +4,7 @@ import '../../styles/StockLogTab.css';
 
 interface StockChangeLogEntry {
   stockChangeId: number;
-  adminUser: { userId: number; username: string };
+  adminUser: { userId: number; username: string } | null;
   ingredient: { ingredientId: number; name: string; unit: string };
   changeAmount: number;
   changedAt: string;
@@ -87,7 +87,7 @@ export default function StockLogTab() {
               <tr>
                 <th>Ingredient</th>
                 <th>Change</th>
-                <th>Admin</th>
+                <th>User</th>
                 <th>Timestamp</th>
               </tr>
             </thead>
@@ -100,7 +100,7 @@ export default function StockLogTab() {
                       {formatChangeAmount(entry.changeAmount)}
                     </span>
                   </td>
-                  <td>{entry.adminUser.username}</td>
+                  <td>{entry.adminUser?.username ?? '—'}</td>
                   <td>{formatTimestamp(entry.changedAt)}</td>
                 </tr>
               ))}

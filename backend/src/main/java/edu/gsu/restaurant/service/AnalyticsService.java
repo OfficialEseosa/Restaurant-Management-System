@@ -99,14 +99,18 @@ public class AnalyticsService {
         String sql =
             "SELECT i.name, i.unit, " +
             "       COALESCE(inv.quantity_on_hand, 0) AS current_stock, " +
-            "       COALESCE(SUM(oi.quantity * mii.quantity_required), 0) AS estimated_demand " +
+            "       COALESCE(SUM(COALESCE(d.total_qty, 0) * mii.quantity_required), 0) AS estimated_demand " +
             "FROM ingredients i " +
             "LEFT JOIN ingredient_inventory inv ON inv.ingredient_id = i.ingredient_id " +
             "LEFT JOIN menu_item_ingredients mii ON mii.ingredient_id = i.ingredient_id " +
-            "LEFT JOIN order_items oi ON oi.menu_item_id = mii.menu_item_id " +
-            "LEFT JOIN orders o ON o.order_id = oi.order_id " +
-            "    AND o.status <> 'CANCELLED' " +
-            "    AND o.placed_at >= DATE_SUB(NOW(), INTERVAL :days DAY) " +
+            "LEFT JOIN ( " +
+            "    SELECT oi.menu_item_id, SUM(oi.quantity) AS total_qty " +
+            "    FROM order_items oi " +
+            "    JOIN orders o ON o.order_id = oi.order_id " +
+            "    WHERE o.status <> 'CANCELLED' " +
+            "      AND o.placed_at >= DATE_SUB(NOW(), INTERVAL :days DAY) " +
+            "    GROUP BY oi.menu_item_id " +
+            ") d ON d.menu_item_id = mii.menu_item_id " +
             "GROUP BY i.ingredient_id, i.name, i.unit, inv.quantity_on_hand " +
             "ORDER BY estimated_demand DESC";
 

@@ -59,6 +59,13 @@ public class OrderController {
         return orderService.placeOrder(request);
     }
 
+    public record CancelOrderRequest(Long userId) {}
+
+    @PostMapping("/{id}/cancel")
+    public Order cancel(@PathVariable Long id, @RequestBody CancelOrderRequest request) {
+        return orderService.cancelOrder(id, request != null ? request.userId() : null);
+    }
+
     @PatchMapping("/{id}/status")
     public Order updateStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
         return orderService.updateOrderStatus(id, body.get("status"));

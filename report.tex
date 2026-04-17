@@ -1,0 +1,659 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{parskip}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{float}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue,
+    citecolor=blue
+}
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red!70!black}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Restaurant Management System}
+\lhead{CSC 4710 --- Database Systems}
+\cfoot{\thepage}
+
+\title{
+    \vspace{-1cm}
+    \Large\textbf{Restaurant Management System} \\[6pt]
+    \large CSC 4710 --- Database Systems \\[4pt]
+    \normalsize Georgia State University
+}
+\author{
+    Raphael Omorose \and Ahmed Cisse \and Jonathan Bell
+}
+\date{April 2026}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{fancy}
+
+\tableofcontents
+\newpage
+
+% -----------------------------------------------------------------------
+\section{Introduction}
+% -----------------------------------------------------------------------
+
+\subsection{Application Overview}
+
+The Restaurant Management System (RMS) is a full-stack web application that
+digitalises the daily operations of a restaurant. It supports two distinct user
+roles: \textbf{customers}, who browse the menu, build a cart, and place orders;
+and \textbf{administrators}, who manage ingredients, menu items, inventory stock
+levels, order fulfilment, and business analytics --- all from a single
+browser-based interface with no specialist software required.
+
+\subsection{Motivation}
+
+We chose a restaurant management system because it exercises every major database
+concept covered in the course in a context that is immediately intuitive to anyone
+who has visited a restaurant.
+
+\begin{itemize}
+    \item \textbf{Multi-table relational design.} Ingredients, menu items, orders,
+          users, and inventory are naturally distinct entities with meaningful
+          relationships, requiring thoughtful schema design.
+
+    \item \textbf{Integrity constraints.} Price must be positive, ingredient names
+          cannot be blank, and an ingredient referenced by a menu item must not be
+          deleted. These constraints are enforced at both the database level (NOT
+          NULL, FK cascades) and the application layer (bean validation,
+          ConflictException).
+
+    \item \textbf{Transactions.} Placing an order must atomically create
+          order-item rows, deduct ingredient inventory, and record a price
+          snapshot. Partial success is never acceptable and is prevented with
+          \texttt{@Transactional}.
+
+    \item \textbf{Aggregate queries.} Revenue trends, top-selling items, order
+          volume, and inventory forecasting are meaningful business questions
+          that require \texttt{GROUP BY}, \texttt{SUM}, and date arithmetic ---
+          direct applications of the SQL taught in this course.
+
+    \item \textbf{Normalisation.} The recipe junction table
+          (\texttt{menu\_item\_ingredients}) cleanly separates the many-to-many
+          relationship between menu items and ingredients. The price snapshot on
+          \texttt{order\_items} avoids update anomalies from future price changes.
+\end{itemize}
+
+\subsection{Key Components}
+
+\begin{itemize}
+    \item \textbf{Spring Boot 4 REST API} (Java 21) --- nine controllers
+          exposing approximately 40 endpoints.
+    \item \textbf{MySQL 8 database} --- eight normalised tables managed via
+          Spring Data JPA / Hibernate.
+    \item \textbf{React 19 / TypeScript SPA} --- five pages, eleven reusable
+          admin-tab components, and a Recharts analytics dashboard.
+    \item \textbf{Axios HTTP client} --- typed API layer split into five modules.
+    \item \textbf{Cloudinary} --- image uploads compressed server-side and stored
+          in Cloudinary; the API returns a \texttt{secure\_url} saved in the
+          database.
+    \item \textbf{Spring Security Crypto} --- BCrypt password hashing; no
+          plaintext passwords are ever stored or logged.
+\end{itemize}
+
+% -----------------------------------------------------------------------
+\section{Database Design}
+% -----------------------------------------------------------------------
+
+\subsection{Entity--Relationship Model}
+
+The ER model contains eight entities and the following relationships.
+
+\begin{itemize}
+    \item \textbf{User} places zero or more \textbf{Order}s \hfill(1:N)
+    \item \textbf{Order} contains one or more \textbf{OrderItem}s \hfill(1:N)
+    \item Each \textbf{OrderItem} references exactly one \textbf{MenuItem} \hfill(N:1)
+    \item \textbf{MenuItem} is composed of zero or more \textbf{Ingredient}s via
+          the associative entity \textbf{MenuItemIngredient} \hfill(M:N $\to$ two 1:N)
+    \item Each \textbf{Ingredient} has exactly one \textbf{IngredientInventory}
+          record (1:1 shared-key; \texttt{ingredient\_inventory.ingredient\_id}
+          is both PK and FK)
+    \item \textbf{StockChangeLog} references the acting admin \textbf{User} and
+          the affected \textbf{Ingredient} \hfill(N:1 each)
+\end{itemize}
+
+\subsection{Relational Schema}
+
+Table~\ref{tab:schema} summarises the eight tables, their primary keys, and
+their foreign key dependencies.
+
+\begin{table}[H]
+\centering
+\caption{Database schema overview}
+\label{tab:schema}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}p{4cm}p{3.2cm}p{3.5cm}p{3.5cm}@{}}
+\toprule
+\textbf{Table} & \textbf{Primary Key} & \textbf{Foreign Keys} & \textbf{Notable Constraints} \\
+\midrule
+\texttt{users}
+    & \texttt{user\_id}
+    & ---
+    & \texttt{username} UNIQUE; \texttt{role} ENUM(\texttt{USER},\texttt{ADMIN}) \\
+
+\texttt{ingredients}
+    & \texttt{ingredient\_id}
+    & ---
+    & \texttt{name}, \texttt{unit} NOT NULL; \texttt{image\_url} pattern-validated \\
+
+\texttt{ingredient\_inventory}
+    & \texttt{ingredient\_id}
+    & \texttt{ingredient\_id} $\to$ \texttt{ingredients}
+    & 1:1 shared PK/FK; \texttt{quantity\_on\_hand} $\geq 0$ \\
+
+\texttt{menu\_items}
+    & \texttt{menu\_item\_id}
+    & ---
+    & \texttt{price} $\geq 0.01$; \texttt{is\_active} DEFAULT TRUE;
+      \texttt{category} ENUM (BURGERS, SANDWICHES, FRIES, SIDES, BREAKFAST,
+      SOUPS, SWEETS, DRINKS) \\
+
+\texttt{menu\_item\_ingredients}
+    & (\texttt{menu\_item\_id}, \texttt{ingredient\_id})
+    & both cols are FKs
+    & \texttt{quantity\_required} $> 0$ \\
+
+\texttt{orders}
+    & \texttt{order\_id}
+    & \texttt{user\_id} $\to$ \texttt{users}
+    & \texttt{status} $\in$ \{PLACED, READY, COMPLETE, CANCELLED\} \\
+
+\texttt{order\_items}
+    & \texttt{order\_item\_id}
+    & \texttt{order\_id}, \texttt{menu\_item\_id}
+    & \texttt{unit\_price\_at\_time} immutable snapshot \\
+
+\texttt{stock\_change\_log}
+    & \texttt{stock\_change\_id}
+    & \texttt{admin\_user\_id}, \texttt{ingredient\_id}
+    & Append-only audit trail \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Functional Dependencies and Normalisation}
+
+All eight tables satisfy \textbf{Boyce--Codd Normal Form (BCNF)}.
+
+\begin{itemize}
+    \item Every table with a single-column primary key has all non-key attributes
+          functionally dependent \emph{solely} on that key --- no partial or
+          transitive dependencies exist.
+
+    \item \texttt{menu\_item\_ingredients} uses a composite primary key
+          (\texttt{menu\_item\_id}, \texttt{ingredient\_id}). Its only non-key
+          attribute, \texttt{quantity\_required}, depends on the \emph{full}
+          composite key, satisfying BCNF.
+
+    \item \texttt{ingredient\_inventory} shares its primary key with
+          \texttt{ingredients} (1:1 shared-key pattern). The dependency
+          \texttt{ingredient\_id} $\to$ \{\texttt{quantity\_on\_hand},
+          \texttt{last\_updated\_at}\} is trivially BCNF.
+
+    \item \texttt{order\_items} stores \texttt{unit\_price\_at\_time} as a
+          deliberate event snapshot. Although
+          \texttt{menu\_item\_id} $\to$ \texttt{price} holds in
+          \texttt{menu\_items}, recording the price \emph{at the time of the
+          order} is a fact about the order event itself, not a derived value.
+          Historical orders must not be affected by future price changes.
+          This is a sound design decision, not a normalisation violation.
+\end{itemize}
+
+\subsection{Additional Constraints}
+
+\begin{itemize}
+    \item \textbf{Application-level referential protection.} Deleting an
+          ingredient that is used by any menu item raises HTTP 409 Conflict
+          (\texttt{ConflictException}) before any database statement is executed.
+
+    \item \textbf{Bean validation.} \texttt{@NotBlank} on ingredient and
+          menu-item names, \texttt{@DecimalMin("0.01")} on price, and
+          \texttt{@Pattern} on image URLs are enforced via \texttt{@Valid} on
+          controller request bodies before any write reaches the database.
+
+    \item \textbf{Password security.} BCrypt via Spring Security Crypto. The
+          raw password is write-only (\texttt{@JsonProperty(access =
+          WRITE\_ONLY)}) and never appears in API responses or logs.
+
+    \item \textbf{Audit trail.} \texttt{stock\_change\_log} is append-only ---
+          no update or delete endpoints are exposed, preserving a full history
+          of every manual stock adjustment.
+\end{itemize}
+
+% -----------------------------------------------------------------------
+\section{Functionality Details}
+% -----------------------------------------------------------------------
+
+\subsection{Basic Functions}
+
+\begin{description}[style=nextline]
+    \item[User registration and authentication]
+    \texttt{POST /api/users/register} hashes the password with BCrypt and
+    persists the user. \texttt{POST /api/users/login} verifies the hash and
+    returns the user object (including role) for client-side session storage.
+    The frontend stores the response in \texttt{localStorage} and guards
+    routes accordingly; non-admin users are redirected away from
+    \texttt{/admin}.
+
+    \item[Menu browsing and availability]
+    \texttt{GET /api/menu-items/availability} joins menu items with their
+    ingredient requirements and current inventory levels to return a real-time
+    availability flag for each dish. The customer order page uses this to
+    visually indicate out-of-stock items before the customer tries to order.
+
+    \item[Cart and order placement]
+    Customers add items to a client-side cart (React state). On checkout,
+    \texttt{POST /api/orders/place} runs a \texttt{@Transactional} method that:
+    (1) validates the cart is non-empty;
+    (2) validates all menu items exist and are active;
+    (3) creates the \texttt{Order} and \texttt{OrderItem} rows with a price
+    snapshot; and
+    (4) deducts ingredient inventory for every ordered item across all
+    ingredient rows.
+
+    \item[Order history]
+    \texttt{GET /api/orders/user/\{userId\}} returns the customer's full order
+    history with items eagerly fetched via a JPQL \texttt{JOIN FETCH} query,
+    ordered by \texttt{created\_at DESC} to show the most recent orders first.
+
+    \item[Image upload]
+    \texttt{POST /api/images/upload} accepts a \texttt{multipart/form-data}
+    file, compresses it server-side via the Cloudinary Java SDK
+    (quality auto, format auto, 800\,px width limit), and returns the
+    resulting \texttt{secure\_url}. Ingredient and menu-item forms in the admin
+    panel use this endpoint to replace the plain URL text input with a
+    file-picker button and live thumbnail preview.
+
+    \item[Ingredient and menu item CRUD]
+    Full create, read, update, and delete for ingredients (\texttt{/api/ingredients})
+    and menu items (\texttt{/api/menu-items}) via standard REST endpoints.
+    Menu items carry a \texttt{category} field (one of eight diner categories)
+    displayed and filtered in the admin panel.
+    Ingredient deletes are protected against referential use.
+
+    \item[Inventory management]
+    Admins view and update \texttt{quantity\_on\_hand} for each ingredient via
+    \texttt{IngredientInventory} endpoints. Every manual adjustment can be
+    recorded to \texttt{stock\_change\_log} for audit purposes.
+\end{description}
+
+\subsection{Advanced Functions}
+
+\begin{description}[style=nextline]
+    \item[Order status lifecycle]
+    \texttt{PATCH /api/orders/\{id\}/status} accepts a JSON body
+    \texttt{\{"status": "READY"\}} and transitions an order through
+    \texttt{PLACED $\to$ READY $\to$ COMPLETE} (or \texttt{CANCELLED}).
+    Invalid status values return HTTP~400. The admin Orders tab displays all
+    orders with per-row status dropdowns that call this endpoint.
+
+    \item[Filtered order queries]
+    \texttt{GET /api/orders?status=PLACED} uses a Spring Data derived query
+    (\texttt{findByStatus}) to return only orders in a given state, enabling
+    the admin to focus on pending work without client-side filtering.
+
+    \item[Analytics dashboard]
+    Four native SQL queries (via JPA \texttt{EntityManager}) power the
+    analytics tab.
+    \begin{itemize}
+        \item \textbf{Revenue over time} --- daily \texttt{SUM(quantity
+              $\times$ unit\_price\_at\_time)} grouped by
+              \texttt{DATE(placed\_at)}, rendered as a Recharts
+              \texttt{LineChart}.
+        \item \textbf{Top-selling items} --- total units and revenue per menu
+              item in a date range, rendered as a \texttt{BarChart}.
+        \item \textbf{Order volume} --- daily order counts in a date range,
+              rendered as a \texttt{LineChart}.
+        \item \textbf{Inventory forecast} --- joins ingredient demand (from
+              recent orders) against current stock to estimate remaining supply,
+              rendered as a \texttt{BarChart}.
+    \end{itemize}
+
+    \item[Property-based testing]
+    Using the jqwik library, the test suite verifies business invariants over
+    hundreds of randomly generated inputs:
+    \begin{itemize}
+        \item Order placement always snapshots the correct unit price.
+        \item Placing an order with a missing or inactive menu item never calls
+              \texttt{orderRepository.save} (atomicity guarantee).
+        \item Deleting a referenced ingredient always throws
+              \texttt{ConflictException} and never calls \texttt{deleteById}.
+    \end{itemize}
+\end{description}
+
+% -----------------------------------------------------------------------
+\section{Implementation Details}
+% -----------------------------------------------------------------------
+
+\subsection{Technology Stack}
+
+\begin{table}[H]
+\centering
+\caption{Technology choices}
+\label{tab:tech}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Layer} & \textbf{Technology} & \textbf{Version} \\
+\midrule
+Database            & MySQL                          & 8.0 \\
+ORM / persistence   & Spring Data JPA / Hibernate    & via Spring Boot 4 \\
+Backend framework   & Spring Boot                    & 4.0.3 \\
+Backend language    & Java                           & 21 \\
+Build tool          & Apache Maven                   & 3.x \\
+Frontend framework  & React                          & 19.2 \\
+Frontend language   & TypeScript                     & 5.9 \\
+Frontend build tool & Vite                           & 7.3 \\
+HTTP client         & Axios                          & 1.15 \\
+Charting            & Recharts                       & 3.8 \\
+Client-side routing & React Router                   & 7.13 \\
+Property testing    & jqwik + Mockito                & 1.9.3 \\
+Password hashing    & Spring Security Crypto (BCrypt)& via Spring Boot 4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Backend Architecture}
+
+The backend follows a standard four-layer architecture.
+
+\begin{enumerate}
+    \item \textbf{Entity layer.} JPA-annotated POJOs with Lombok for boilerplate
+          reduction. Jackson annotations
+          (\texttt{@JsonManagedReference}/\texttt{@JsonBackReference}) prevent
+          circular serialisation on bidirectional relationships
+          (\texttt{Order $\leftrightarrow$ OrderItem},
+          \texttt{MenuItem $\leftrightarrow$ MenuItemIngredient}).
+
+    \item \textbf{Repository layer.} Spring Data JPA interfaces. Custom JPQL
+          queries handle \texttt{JOIN FETCH} (eliminating N+1 selects) and
+          derived queries for filtered lookups. Native SQL is used only where
+          JPQL cannot express the required aggregation.
+
+    \item \textbf{Service layer.} All business logic lives here: transaction
+          boundaries (\texttt{@Transactional}), input validation, inventory
+          deduction, status transition validation, and the referential delete
+          guard.
+
+    \item \textbf{Controller layer.} Thin REST controllers that map HTTP verbs
+          to service methods. Bean validation is triggered via \texttt{@Valid}
+          on request bodies. A \texttt{@RestControllerAdvice} global handler
+          maps \texttt{ResourceNotFoundException} to 404 and
+          \texttt{ConflictException} to 409 with a consistent JSON error body.
+\end{enumerate}
+
+CORS is configured in \texttt{WebConfig} to allow the Vite dev server
+(\texttt{localhost:5173}) to call the Spring Boot server
+(\texttt{localhost:8080}) using all HTTP methods including \texttt{PATCH}.
+
+\subsection{Frontend Architecture}
+
+The frontend is a single-page application using React Router v7 with five
+routes.
+
+\begin{itemize}
+    \item \texttt{/} --- Landing page with feature overview and navigation to
+          both login flows.
+    \item \texttt{/login} --- Combined sign-in / sign-up form. Redirects to
+          \texttt{/order} for customers and \texttt{/admin} for admins based
+          on the role returned by the login endpoint.
+    \item \texttt{/admin-login} --- Dedicated admin portal that rejects
+          non-admin credentials at the client level.
+    \item \texttt{/order} --- Customer page with a Menu tab (live availability,
+          CartPanel checkout) and a My Orders tab (order history).
+    \item \texttt{/admin} --- Admin page with six tabs: Ingredients, Menu Items,
+          Inventory, Stock Log, Orders, and Analytics.
+\end{itemize}
+
+The API layer (\texttt{src/api/}) is split into five typed Axios modules.
+
+\begin{itemize}
+    \item \texttt{axios.ts} --- base instance pointed at
+          \texttt{http://localhost:8080}.
+    \item \texttt{adminApi.ts} --- CRUD for ingredients, menu items, inventory,
+          and stock log; also exposes \texttt{uploadImage()} which posts a
+          \texttt{File} to \texttt{/api/images/upload} and returns the
+          Cloudinary URL.
+    \item \texttt{menuApi.ts} --- public menu and availability reads.
+    \item \texttt{orderApi.ts} --- admin order management (list, filter, update
+          status).
+    \item \texttt{analyticsApi.ts} --- four analytics endpoints with date-range
+          parameters.
+    \item \texttt{customerOrderApi.ts} --- customer cart checkout
+          (\texttt{POST /api/orders/place}).
+\end{itemize}
+
+\subsection{Frontend--Backend Interaction}
+
+The frontend communicates with the backend exclusively over HTTP/JSON on
+\texttt{localhost:8080/api/**}. Authentication is stateless from the server's
+perspective: the login endpoint returns a user object that the browser stores in
+\texttt{localStorage}. Route guards in each page component read this value on
+mount and redirect unauthenticated or unauthorised users. This approach was
+chosen for simplicity in an academic context; a production system would use
+short-lived JWTs and server-side session validation on every protected endpoint.
+
+\subsection{Source Code Repository}
+
+The complete source code is publicly available at:
+
+\begin{center}
+\url{https://github.com/OfficialEseosa/Restaurant-Management-System}
+\end{center}
+
+% -----------------------------------------------------------------------
+\section{Group Member Evaluation}
+% -----------------------------------------------------------------------
+
+\begin{table}[H]
+\centering
+\caption{Group member contributions and scores}
+\label{tab:team}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{@{}p{3.2cm}p{9cm}c@{}}
+\toprule
+\textbf{Member} & \textbf{Contributions} & \textbf{Score (/10)} \\
+\midrule
+Raphael Omorose
+    & Backend lead. Designed the full database schema. Built all service and
+      repository layers including analytics native SQL queries, menu availability
+      endpoint, atomic order placement with inventory deduction, order status
+      management, and CORS configuration.
+    & 10 \\
+
+Ahmed Cisse
+    & Backend testing and validation. Added Bean Validation annotations to
+      entities, \texttt{@Valid} controller enforcement, \texttt{ConflictException}
+      with global error handler, ingredient delete guard, and the jqwik
+      property-based test suite.
+    & 9 \\
+
+Jonathan Bell
+    & Frontend integration. Built the complete React/TypeScript SPA: all five
+      pages, eleven admin-tab components (Ingredients, Menu Items, Inventory,
+      Stock Log, Orders, Analytics), the CartPanel checkout flow, OrderHistory,
+      and all five typed Axios API modules.
+    & 10 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% -----------------------------------------------------------------------
+\section{Experiences}
+% -----------------------------------------------------------------------
+
+\subsection{Lessons Learned}
+
+\textbf{Normalisation has real practical consequences.}
+Storing \texttt{unit\_price\_at\_time} as a snapshot on \texttt{order\_items}
+instead of joining back to \texttt{menu\_items.price} was initially debated as a
+normalisation violation. Working through the functional dependency argument
+clarified that it is not: the fact being recorded is ``the price charged at the
+time of this order'', which depends on the order event, not on the menu item
+alone. Without the snapshot, any price update would retroactively change
+historical order totals --- a serious data integrity problem.
+
+\textbf{N+1 queries are silent until they hurt.}
+Because Hibernate's default behaviour fetches associated collections lazily
+(or eagerly via a separate \texttt{SELECT} per row), a \texttt{findAll()} over
+23 ingredients was issuing 24 round-trips to a remote database --- one for the
+ingredient list and one per row for the joined \texttt{ingredient\_inventory}
+record. At roughly 150\,ms per round-trip this produced a 3--5 second response
+time. Overriding \texttt{findAll()} on every affected repository with
+\texttt{@EntityGraph} collapses all associations into a single \texttt{LEFT
+JOIN}, cutting each list endpoint to a single database call regardless of row
+count.
+
+\textbf{Transactionality must be designed, not assumed.}
+The \texttt{placeOrder} method creates an order, multiple order items, and then
+deducts inventory across potentially many ingredient rows. Wrapping the entire
+method in \texttt{@Transactional} ensures that a failure at any point (e.g., a
+missing inventory record) rolls back all changes atomically, leaving the database
+in a consistent state.
+
+\textbf{Property-based testing finds edge cases unit tests miss.}
+The jqwik tests for \texttt{OrderService} ran hundreds of randomly generated
+order requests and exercised scenarios --- such as empty sublist edge cases and
+inactive menu item combinations --- that handwritten unit tests would never have
+generated.
+
+\subsection{Hard Problems Solved}
+
+\begin{itemize}
+    \item \textbf{Circular JSON serialisation.} Bidirectional JPA relationships
+          (\texttt{Order $\leftrightarrow$ OrderItem},
+          \texttt{MenuItem $\leftrightarrow$ MenuItemIngredient}) cause infinite
+          loops during Jackson serialisation. Resolved with
+          \texttt{@JsonManagedReference} / \texttt{@JsonBackReference} pairs so
+          only one side of each relationship is serialised.
+
+    \item \textbf{Composite primary key mapping.} The recipe junction table uses
+          a composite PK. Mapping this correctly required an
+          \texttt{@Embeddable} ID class (\texttt{MenuItemIngredientId}) and
+          \texttt{@EmbeddedId} on the entity, with \texttt{@MapsId} on each FK
+          field.
+
+    \item \textbf{Analytics with native SQL.} The aggregate queries for revenue,
+          top items, and inventory forecast could not be expressed in JPQL.
+          Using \texttt{EntityManager.createNativeQuery} with
+          \texttt{@PersistenceContext} injection provided full SQL
+          expressiveness while remaining within the Spring/JPA ecosystem.
+
+    \item \textbf{CORS method coverage.} The order status update uses the
+          \texttt{PATCH} HTTP method. An initial CORS configuration that only
+          listed \texttt{GET}, \texttt{POST}, \texttt{PUT}, and \texttt{DELETE}
+          silently blocked all status updates from the browser. Extending the
+          allowed methods list resolved the issue.
+
+    \item \textbf{Cloudinary multipart upload with server-side compression.}
+          Storing images required a dedicated \texttt{POST /api/images/upload}
+          endpoint that receives a \texttt{MultipartFile}, uploads the raw bytes
+          to the Cloudinary API with an eager transformation
+          (\texttt{q\_auto,f\_auto,w\_800,c\_limit}), and returns the
+          \texttt{secure\_url}. The frontend file-picker sends a
+          \texttt{FormData} request and immediately renders a thumbnail from
+          the returned URL before the user saves the form.
+
+    \item \textbf{Transient entity reference on composite-key save.}
+          The \texttt{POST /api/menu-item-ingredients} endpoint consistently
+          returned HTTP~400. Jackson deserialises the request body into a
+          \texttt{MenuItemIngredient} whose \texttt{MenuItem} and
+          \texttt{Ingredient} fields are transient stubs --- only their IDs are
+          set. With no cascade configuration, Hibernate attempted to persist
+          these unmanaged objects and threw
+          \texttt{TransientPropertyValueException}. The fix was to replace the
+          Jackson-created stubs with JPA proxy references from
+          \texttt{getReferenceById()} and to explicitly construct the
+          \texttt{@EmbeddedId} in the service layer before calling
+          \texttt{save()}.
+\end{itemize}
+
+\subsection{Future Extensions}
+
+\begin{itemize}
+    \item \textbf{JWT authentication.} Replace \texttt{localStorage} role
+          storage with signed JWTs and Spring Security filter chains to protect
+          admin endpoints at the server level.
+    \item \textbf{Real-time order notifications.} Use WebSockets or
+          Server-Sent Events so the kitchen view updates when new orders arrive,
+          eliminating the need for manual page refreshes.
+    \item \textbf{Multi-location support.} Extend the schema with a
+          \texttt{locations} table and add \texttt{location\_id} foreign keys
+          to inventory and orders to support restaurant chains.
+    \item \textbf{Payment integration.} Integrate a payment gateway (e.g.,
+          Stripe); add a \texttt{payments} table with idempotency keys to
+          handle retry safety and prevent double-charges.
+\end{itemize}
+
+% -----------------------------------------------------------------------
+\section{References}
+% -----------------------------------------------------------------------
+
+\begin{enumerate}
+    \item Spring Boot Documentation. \textit{Spring Boot Reference Guide 4.x}.
+          \url{https://docs.spring.io/spring-boot/docs/current/reference/html/}
+
+    \item Spring Data JPA Documentation. \textit{Spring Data JPA Reference
+          Documentation}.
+          \url{https://docs.spring.io/spring-data/jpa/docs/current/reference/html/}
+
+    \item React Documentation. \textit{React 19 --- Learn React}.
+          \url{https://react.dev}
+
+    \item Recharts. \textit{Recharts --- Redefined chart library built with React
+          and D3}. \url{https://recharts.org}
+
+    \item React Router. \textit{React Router v7 Documentation}.
+          \url{https://reactrouter.com}
+
+    \item Axios. \textit{Axios HTTP Client Documentation}.
+          \url{https://axios-http.com}
+
+    \item jqwik. \textit{jqwik --- Property-Based Testing in Java}.
+          \url{https://jqwik.net}
+
+    \item Mockito. \textit{Mockito Framework Documentation}.
+          \url{https://site.mockito.org}
+
+    \item MySQL 8.0 Reference Manual. Oracle Corporation.
+          \url{https://dev.mysql.com/doc/refman/8.0/en/}
+
+    \item Elmasri, R.\ \& Navathe, S.\ B\@. \textit{Fundamentals of Database
+          Systems}, 7th ed. Pearson, 2016.
+
+    \item OWASP\@. \textit{OWASP Top Ten --- A07:2021 Identification and
+          Authentication Failures}. \url{https://owasp.org/Top10/}
+
+    \item Vite. \textit{Vite --- Next Generation Frontend Tooling}.
+          \url{https://vite.dev}
+\end{enumerate}
+
+\end{document}
