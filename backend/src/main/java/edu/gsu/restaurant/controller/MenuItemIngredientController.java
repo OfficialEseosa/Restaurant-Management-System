@@ -1,5 +1,6 @@
 package edu.gsu.restaurant.controller;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -30,21 +31,37 @@ public class MenuItemIngredientController {
         return menuItemIngredientService.getAllMenuItemIngredients();
     }
 
+    @GetMapping("/menu-item/{menuItemId}")
+    public List<MenuItemIngredient> getByMenuItemId(@PathVariable Long menuItemId) {
+        return menuItemIngredientService.getByMenuItemId(menuItemId);
+    }
+
     @GetMapping("/{menuItemId}/{ingredientId}")
     public MenuItemIngredient getById(@PathVariable Long menuItemId, @PathVariable Long ingredientId) {
         return menuItemIngredientService.getMenuItemIngredientById(new MenuItemIngredientId(menuItemId, ingredientId));
     }
 
+    public record MenuItemRef(Long menuItemId) {}
+    public record IngredientRef(Long ingredientId) {}
+    public record CreateMenuItemIngredientRequest(MenuItemRef menuItem, IngredientRef ingredient, BigDecimal quantityRequired) {}
+    public record UpdateMenuItemIngredientRequest(BigDecimal quantityRequired) {}
+
     @PostMapping
-    public MenuItemIngredient create(@RequestBody MenuItemIngredient menuItemIngredient) {
-        return menuItemIngredientService.save(menuItemIngredient);
+    public MenuItemIngredient create(@RequestBody CreateMenuItemIngredientRequest request) {
+        MenuItemIngredient payload = new MenuItemIngredient();
+        payload.setQuantityRequired(request.quantityRequired());
+        return menuItemIngredientService.saveForMenuItemAndIngredient(
+                request.menuItem() != null ? request.menuItem().menuItemId() : null,
+                request.ingredient() != null ? request.ingredient().ingredientId() : null,
+                payload);
     }
 
     @PutMapping("/{menuItemId}/{ingredientId}")
     public MenuItemIngredient update(@PathVariable Long menuItemId, @PathVariable Long ingredientId,
-            @RequestBody MenuItemIngredient menuItemIngredient) {
-        menuItemIngredient.setId(new MenuItemIngredientId(menuItemId, ingredientId));
-        return menuItemIngredientService.save(menuItemIngredient);
+            @RequestBody UpdateMenuItemIngredientRequest request) {
+        MenuItemIngredient payload = new MenuItemIngredient();
+        payload.setQuantityRequired(request.quantityRequired());
+        return menuItemIngredientService.saveForMenuItemAndIngredient(menuItemId, ingredientId, payload);
     }
 
     @DeleteMapping("/{menuItemId}/{ingredientId}")
