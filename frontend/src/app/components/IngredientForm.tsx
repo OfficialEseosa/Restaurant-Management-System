@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { Ingredient, NewIngredient } from '../../api/adminApi';
-import { createIngredient, updateIngredient } from '../../api/adminApi';
+import { createIngredient, updateIngredient, uploadImage } from '../../api/adminApi';
 import '../../styles/IngredientForm.css';
 
 interface IngredientFormProps {
@@ -18,11 +18,29 @@ export default function IngredientForm({ ingredient, onSave, onClose }: Ingredie
   const [name, setName] = useState(ingredient?.name ?? '');
   const [unit, setUnit] = useState(ingredient?.unit ?? '');
   const [imageUrl, setImageUrl] = useState(ingredient?.imageUrl ?? '');
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
   const isEditMode = ingredient !== undefined;
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const { url } = await uploadImage(file);
+      setImageUrl(url);
+    } catch {
+      setUploadError('Image upload failed. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  }
 
   function validate(): FormErrors {
     const newErrors: FormErrors = {};
@@ -125,16 +143,30 @@ export default function IngredientForm({ ingredient, onSave, onClose }: Ingredie
             )}
           </div>
 
-          {/* Image URL (optional) */}
+          {/* Image Upload (optional) */}
           <div className="form-field">
-            <label htmlFor="ingredient-image-url">Image URL</label>
+            <label>Image</label>
             <input
-              id="ingredient-image-url"
-              type="text"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="https://example.com/image.png"
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleFileChange}
             />
+            <button
+              type="button"
+              className="btn-upload"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+            >
+              {uploading ? 'Uploading...' : 'Upload Image'}
+            </button>
+            {uploadError && (
+              <span className="field-error" role="alert">{uploadError}</span>
+            )}
+            {imageUrl && (
+              <img src={imageUrl} alt="Preview" className="image-preview" />
+            )}
           </div>
 
           <div className="form-actions">

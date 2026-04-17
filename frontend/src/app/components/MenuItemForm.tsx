@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { MenuItem, NewMenuItem, MenuItemIngredientPayload } from '../../api/menuApi';
 import { createMenuItem, updateMenuItem, assignIngredientToMenuItem } from '../../api/menuApi';
 import type { Ingredient } from '../../api/adminApi';
-import { getAllIngredients } from '../../api/adminApi';
+import { getAllIngredients, uploadImage } from '../../api/adminApi';
 import api from '../../api/axios';
 import IngredientSelector from './IngredientSelector';
 import '../../styles/MenuItemForm.css';
@@ -100,6 +100,9 @@ export default function MenuItemForm({ item, onSave, onClose }: MenuItemFormProp
   const [description, setDescription] = useState(item?.description ?? '');
   const [imageUrl, setImageUrl] = useState(item?.imageUrl ?? '');
   const [active, setActive] = useState(item?.active ?? true);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [allIngredients, setAllIngredients] = useState<Ingredient[]>([]);
   const [selectedIngredients, setSelectedIngredients] = useState<IngredientQuantity[]>(() => {
@@ -115,6 +118,21 @@ export default function MenuItemForm({ item, onSave, onClose }: MenuItemFormProp
   const [apiError, setApiError] = useState<string | null>(null);
 
   const isEditMode = item !== undefined;
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const { url } = await uploadImage(file);
+      setImageUrl(url);
+    } catch {
+      setUploadError('Image upload failed. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  }
 
   useEffect(() => {
     getAllIngredients()
@@ -238,16 +256,30 @@ export default function MenuItemForm({ item, onSave, onClose }: MenuItemFormProp
             />
           </div>
 
-          {/* Image URL */}
+          {/* Image Upload */}
           <div className="form-field">
-            <label htmlFor="menu-item-image-url">Image URL</label>
+            <label>Image</label>
             <input
-              id="menu-item-image-url"
-              type="text"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="https://example.com/image.png"
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handleFileChange}
             />
+            <button
+              type="button"
+              className="btn-upload"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+            >
+              {uploading ? 'Uploading...' : 'Upload Image'}
+            </button>
+            {uploadError && (
+              <span className="field-error" role="alert">{uploadError}</span>
+            )}
+            {imageUrl && (
+              <img src={imageUrl} alt="Preview" className="image-preview" />
+            )}
           </div>
 
           {/* Active */}

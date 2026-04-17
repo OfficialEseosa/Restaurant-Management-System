@@ -116,7 +116,7 @@ export default function IngredientsTab() {
                     />
                   ) : (
                     <div className="ingredient-img-placeholder" aria-label="No image">
-                      🥗
+                      No Image
                     </div>
                   )}
                 </td>

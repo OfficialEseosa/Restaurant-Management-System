@@ -38,7 +38,7 @@ export default function AdminPage() {
             aria-expanded={profileOpen}
             aria-haspopup="true"
           >
-            👤
+            &#128100;
           </button>
           {profileOpen && (
             <div className="admin-profile-dropdown" role="menu">

@@ -26,7 +26,7 @@ export default function MenuBrowser({ items, onAddToCart }: MenuBrowserProps) {
                 />
               ) : (
                 <div className="menu-browser__card-image-placeholder" aria-label="No image">
-                  🍽️
+                  No Image
                 </div>
               )}
               <div className="menu-browser__card-body">

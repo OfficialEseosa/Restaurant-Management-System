@@ -77,7 +77,7 @@ export default function OrderPage() {
             aria-expanded={profileOpen}
             aria-haspopup="true"
           >
-            👤
+            &#128100;
           </button>
           {profileOpen && (
             <div className="order-page__profile-dropdown" role="menu">
