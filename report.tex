@@ -115,8 +115,11 @@ who has visited a restaurant.
     \item \textbf{Cloudinary} --- image uploads compressed server-side and stored
           in Cloudinary; the API returns a \texttt{secure\_url} saved in the
           database.
-    \item \textbf{Spring Security Crypto} --- BCrypt password hashing; no
-          plaintext passwords are ever stored or logged.
+    \item \textbf{Spring Security} --- full security filter chain with CSRF
+          disabled, stateless sessions, and CORS delegated to \texttt{WebConfig}.
+          BCrypt password hashing; no plaintext passwords are ever stored or
+          logged. Role enforcement is applied at the service layer and via
+          frontend route guards.
 \end{itemize}
 
 % -----------------------------------------------------------------------
@@ -245,7 +248,17 @@ All eight tables satisfy \textbf{Boyce--Codd Normal Form (BCNF)}.
 
     \item \textbf{Audit trail.} \texttt{stock\_change\_log} is append-only ---
           no update or delete endpoints are exposed, preserving a full history
-          of every manual stock adjustment.
+          of every inventory change. Entries are written both when an admin
+          manually adjusts stock and when \texttt{placeOrder} deducts
+          ingredients, recording the ordering user as the acting party.
+
+    \item \textbf{Performance indexes.} JPA \texttt{@Index} annotations on
+          \texttt{orders(placed\_at)}, \texttt{orders(status)},
+          \texttt{order\_items(menu\_item\_id)}, and
+          \texttt{order\_items(order\_id)} are applied automatically by
+          Hibernate on startup (\texttt{ddl-auto=update}). These indexes
+          directly benefit the analytics native SQL queries which filter and
+          group on \texttt{placed\_at} and join on \texttt{menu\_item\_id}.
 \end{itemize}
 
 % -----------------------------------------------------------------------
@@ -309,11 +322,16 @@ All eight tables satisfy \textbf{Boyce--Codd Normal Form (BCNF)}.
 
 \begin{description}[style=nextline]
     \item[Order status lifecycle]
-    \texttt{PATCH /api/orders/\{id\}/status} accepts a JSON body
-    \texttt{\{"status": "READY"\}} and transitions an order through
-    \texttt{PLACED $\to$ READY $\to$ COMPLETE} (or \texttt{CANCELLED}).
-    Invalid status values return HTTP~400. The admin Orders tab displays all
-    orders with per-row status dropdowns that call this endpoint.
+    Orders follow a process-driven lifecycle rather than a manually settable
+    status field. When \texttt{POST /api/orders/place} is called, the order
+    enters the \texttt{PLACED} state. A grace window of 5--10 seconds
+    (proportional to item count) allows the customer to cancel via
+    \texttt{POST /api/orders/\{id\}/cancel}. After the window expires, the
+    next read of that order triggers an in-process transition to
+    \texttt{COMPLETE}. The admin Orders tab auto-refreshes every two seconds,
+    shows a live countdown for \texttt{PLACED} orders, and supports status
+    filtering via \texttt{GET /api/orders?status=\{status\}}, returning
+    HTTP~400 for unrecognised values.
 
     \item[Filtered order queries]
     \texttt{GET /api/orders?status=PLACED} uses a Spring Data derived query
@@ -337,16 +355,16 @@ All eight tables satisfy \textbf{Boyce--Codd Normal Form (BCNF)}.
               rendered as a \texttt{BarChart}.
     \end{itemize}
 
-    \item[Property-based testing]
-    Using the jqwik library, the test suite verifies business invariants over
-    hundreds of randomly generated inputs:
-    \begin{itemize}
-        \item Order placement always snapshots the correct unit price.
-        \item Placing an order with a missing or inactive menu item never calls
-              \texttt{orderRepository.save} (atomicity guarantee).
-        \item Deleting a referenced ingredient always throws
-              \texttt{ConflictException} and never calls \texttt{deleteById}.
-    \end{itemize}
+    \item[Checkout and order summary flow]
+    The customer checkout is a two-step flow. The cart panel shows a running
+    total and a ``Checkout'' button that navigates to a dedicated Order Summary
+    page. The summary page lists every cart item with its thumbnail image,
+    quantity, and line total alongside a full pricing breakdown (subtotal,
+    8\% tax, service fee, and total). Confirming calls
+    \texttt{POST /api/orders/place}; on success a CSS keyframe animation draws
+    an orange SVG checkmark (stroke-dashoffset from 40 to 0) inside a
+    ring-draw circle, accompanied by a spring-bounce entrance. The customer
+    can then navigate to their order history or return to the menu.
 \end{description}
 
 % -----------------------------------------------------------------------
@@ -375,8 +393,8 @@ Frontend build tool & Vite                           & 7.3 \\
 HTTP client         & Axios                          & 1.15 \\
 Charting            & Recharts                       & 3.8 \\
 Client-side routing & React Router                   & 7.13 \\
-Property testing    & jqwik + Mockito                & 1.9.3 \\
-Password hashing    & Spring Security Crypto (BCrypt)& via Spring Boot 4 \\
+Security framework  & Spring Security                & via Spring Boot 4 \\
+Password hashing    & BCrypt (Spring Security)       & via Spring Boot 4 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -412,7 +430,10 @@ The backend follows a standard four-layer architecture.
 
 CORS is configured in \texttt{WebConfig} to allow the Vite dev server
 (\texttt{localhost:5173}) to call the Spring Boot server
-(\texttt{localhost:8080}) using all HTTP methods including \texttt{PATCH}.
+(\texttt{localhost:8080}) using all standard HTTP methods.
+\texttt{SecurityConfig} delegates CORS decisions to \texttt{WebConfig} via
+\texttt{Customizer.withDefaults()}, ensuring the Spring Security filter chain
+does not shadow the MVC-level CORS mappings.
 
 \subsection{Frontend Architecture}
 
@@ -433,7 +454,7 @@ routes.
           Inventory, Stock Log, Orders, and Analytics.
 \end{itemize}
 
-The API layer (\texttt{src/api/}) is split into five typed Axios modules.
+The API layer (\texttt{src/api/}) is split into six typed Axios modules.
 
 \begin{itemize}
     \item \texttt{axios.ts} --- base instance pointed at
@@ -443,12 +464,14 @@ The API layer (\texttt{src/api/}) is split into five typed Axios modules.
           \texttt{File} to \texttt{/api/images/upload} and returns the
           Cloudinary URL.
     \item \texttt{menuApi.ts} --- public menu and availability reads.
-    \item \texttt{orderApi.ts} --- admin order management (list, filter, update
-          status).
+    \item \texttt{orderApi.ts} --- admin order management (list all, filter by
+          status, cancel); also contains the shared \texttt{Order} type and
+          cancellation-window calculation used by both admin and customer views.
     \item \texttt{analyticsApi.ts} --- four analytics endpoints with date-range
-          parameters.
-    \item \texttt{customerOrderApi.ts} --- customer cart checkout
-          (\texttt{POST /api/orders/place}).
+          parameters; \texttt{getAllAnalytics()} fetches all four in parallel
+          via \texttt{Promise.all}.
+    \item \texttt{customerOrderApi.ts} --- customer order placement
+          (\texttt{POST /api/orders/place}) and per-user history.
 \end{itemize}
 
 \subsection{Frontend--Backend Interaction}
@@ -490,10 +513,10 @@ Raphael Omorose
     & 10 \\
 
 Ahmed Cisse
-    & Backend testing and validation. Added Bean Validation annotations to
-      entities, \texttt{@Valid} controller enforcement, \texttt{ConflictException}
-      with global error handler, ingredient delete guard, and the jqwik
-      property-based test suite.
+    & Backend validation and frontend integration. Added Bean Validation
+      annotations to entities, \texttt{@Valid} controller enforcement,
+      \texttt{ConflictException} with global error handler, ingredient delete
+      guard, and contributed to the admin panel frontend components.
     & 9 \\
 
 Jonathan Bell
@@ -539,11 +562,19 @@ method in \texttt{@Transactional} ensures that a failure at any point (e.g., a
 missing inventory record) rolls back all changes atomically, leaving the database
 in a consistent state.
 
-\textbf{Property-based testing finds edge cases unit tests miss.}
-The jqwik tests for \texttt{OrderService} ran hundreds of randomly generated
-order requests and exercised scenarios --- such as empty sublist edge cases and
-inactive menu item combinations --- that handwritten unit tests would never have
-generated.
+\textbf{JPA \texttt{@MapsId} requires \texttt{persist}, not \texttt{merge}.}
+The \texttt{POST /api/ingredients} endpoint returned HTTP~500 with a Hibernate
+\texttt{AssertionFailure: null identifier} on every call. The root cause was
+subtle: \texttt{ensureInventoryRow} explicitly set \texttt{inventory.setIngredientId(id)}
+before calling \texttt{repository.save()}. Spring Data JPA interprets a
+non-null \texttt{@Id} field as evidence of a detached entity and calls
+\texttt{em.merge()} instead of \texttt{em.persist()}. During merge, Hibernate
+traverses the \texttt{@MapsId} association and fails to derive the shared
+primary key from a proxy obtained in a different transaction. The fix was
+twofold: remove the explicit \texttt{setIngredientId()} call (letting
+\texttt{@MapsId} derive the PK from the \texttt{ingredient} reference), and
+annotate \texttt{IngredientService.save()} with \texttt{@Transactional} to
+keep all operations in a single \texttt{EntityManager} session.
 
 \subsection{Hard Problems Solved}
 
@@ -567,11 +598,15 @@ generated.
           \texttt{@PersistenceContext} injection provided full SQL
           expressiveness while remaining within the Spring/JPA ecosystem.
 
-    \item \textbf{CORS method coverage.} The order status update uses the
-          \texttt{PATCH} HTTP method. An initial CORS configuration that only
-          listed \texttt{GET}, \texttt{POST}, \texttt{PUT}, and \texttt{DELETE}
-          silently blocked all status updates from the browser. Extending the
-          allowed methods list resolved the issue.
+    \item \textbf{Spring Security shadowing MVC CORS.} Adding
+          \texttt{spring-boot-starter-security} inserted a filter chain that
+          ran before the MVC dispatcher. Without explicit configuration,
+          Spring Security's \texttt{CorsFilter} rejected cross-origin preflight
+          requests before they reached \texttt{WebConfig}'s CORS mappings.
+          Resolved by calling \texttt{.cors(Customizer.withDefaults())} in
+          \texttt{SecurityConfig}, which delegates CORS decisions back to the
+          MVC-level configuration rather than blocking at the security filter
+          layer.
 
     \item \textbf{Cloudinary multipart upload with server-side compression.}
           Storing images required a dedicated \texttt{POST /api/images/upload}
@@ -599,9 +634,11 @@ generated.
 \subsection{Future Extensions}
 
 \begin{itemize}
-    \item \textbf{JWT authentication.} Replace \texttt{localStorage} role
-          storage with signed JWTs and Spring Security filter chains to protect
-          admin endpoints at the server level.
+    \item \textbf{JWT authentication.} The Spring Security filter chain is
+          already in place with a permissive configuration. The natural next
+          step is to add a JWT filter: issue a signed token on login, require
+          \texttt{Authorization: Bearer} on protected endpoints, and replace
+          \texttt{localStorage} role storage with server-enforced claims.
     \item \textbf{Real-time order notifications.} Use WebSockets or
           Server-Sent Events so the kitchen view updates when new orders arrive,
           eliminating the need for manual page refreshes.
@@ -636,12 +673,6 @@ generated.
 
     \item Axios. \textit{Axios HTTP Client Documentation}.
           \url{https://axios-http.com}
-
-    \item jqwik. \textit{jqwik --- Property-Based Testing in Java}.
-          \url{https://jqwik.net}
-
-    \item Mockito. \textit{Mockito Framework Documentation}.
-          \url{https://site.mockito.org}
 
     \item MySQL 8.0 Reference Manual. Oracle Corporation.
           \url{https://dev.mysql.com/doc/refman/8.0/en/}
