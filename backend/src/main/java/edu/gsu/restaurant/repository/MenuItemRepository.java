@@ -2,12 +2,17 @@ package edu.gsu.restaurant.repository;
 
 import java.util.List;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import edu.gsu.restaurant.entity.MenuItem;
 
 public interface MenuItemRepository extends JpaRepository<MenuItem, Long> {
+
+    @EntityGraph(attributePaths = {"menuItemIngredients", "menuItemIngredients.ingredient"})
+    @Override
+    List<MenuItem> findAll();
 
     @Query("SELECT DISTINCT mi FROM MenuItem mi " +
            "LEFT JOIN FETCH mi.menuItemIngredients mii " +
