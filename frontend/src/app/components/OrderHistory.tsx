@@ -10,6 +10,12 @@ import '../../styles/OrderHistory.css';
 
 const REFRESH_INTERVAL_MS = 2000;
 
+function sortOrdersChronologically(orders: Order[]): Order[] {
+  return [...orders].sort(
+    (a, b) => new Date(b.placedAt).getTime() - new Date(a.placedAt).getTime(),
+  );
+}
+
 function statusClassName(status: string): string {
   const normalized = status.toLowerCase();
   if (normalized === 'placed') return 'order-history__status--placed';
@@ -36,7 +42,7 @@ export default function OrderHistory() {
     setError(null);
     try {
       const data = await getOrdersByUser(userId);
-      setOrders(data);
+      setOrders(sortOrdersChronologically(data));
     } catch {
       setError('Failed to load order history.');
     } finally {

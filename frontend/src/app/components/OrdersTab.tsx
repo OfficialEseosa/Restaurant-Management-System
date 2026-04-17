@@ -10,6 +10,12 @@ import '../../styles/OrdersTab.css';
 const STATUS_OPTIONS: OrderStatus[] = ['PLACED', 'READY', 'COMPLETE', 'CANCELLED'];
 const REFRESH_INTERVAL_MS = 2000;
 
+function sortOrdersChronologically(orders: Order[]): Order[] {
+  return [...orders].sort(
+    (a, b) => new Date(b.placedAt).getTime() - new Date(a.placedAt).getTime(),
+  );
+}
+
 function formatStatus(status: string): string {
   return `${status.charAt(0)}${status.slice(1).toLowerCase()}`;
 }
@@ -33,7 +39,7 @@ export default function OrdersTab() {
   async function fetchOrders(status?: OrderStatus) {
     try {
       const data = await getAllOrders(status);
-      setOrders(data);
+      setOrders(sortOrdersChronologically(data));
       setFetchError(null);
     } catch {
       setFetchError('Failed to load orders. Please try again.');

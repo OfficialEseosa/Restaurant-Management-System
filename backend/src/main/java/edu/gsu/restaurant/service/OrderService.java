@@ -73,8 +73,8 @@ public class OrderService {
         }
 
         List<Order> orders = normalizedStatus == null
-                ? orderRepository.findAll()
-                : orderRepository.findByStatus(normalizedStatus);
+                ? orderRepository.findAllWithItemsOrderByPlacedAtDesc()
+                : orderRepository.findByStatusWithItemsOrderByPlacedAtDesc(normalizedStatus);
 
         applyLifecycleTransitions(orders);
 
@@ -114,7 +114,14 @@ public class OrderService {
         Order order = new Order();
         order.setUser(user);
         order.setStatus(STATUS_PLACED);
-        order.setPlacedAt(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime requestedPlacedAt = request.getPlacedAt();
+        LocalDateTime placedAt = requestedPlacedAt != null ? requestedPlacedAt : now;
+        if (placedAt.isAfter(now)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "placedAt cannot be in the future");
+        }
+        order.setPlacedAt(placedAt);
 
         List<OrderItem> orderItems = new ArrayList<>();
         Map<Long, Integer> requiredByIngredientId = new HashMap<>();

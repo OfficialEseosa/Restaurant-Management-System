@@ -89,12 +89,15 @@ export default function OrderPage() {
   }
   const [cart, setCart] = useState<CartEntry[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItemWithAvailability[]>([]);
+  const [menuLoading, setMenuLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
 
     async function fetchMenu() {
+      setMenuLoading(true);
+      setError(null);
       try {
         const data = await getMenuItemsWithAvailability();
         setMenuItems(
@@ -105,6 +108,8 @@ export default function OrderPage() {
         );
       } catch {
         setError('Failed to load menu. Please try again.');
+      } finally {
+        setMenuLoading(false);
       }
     }
     fetchMenu();
@@ -220,7 +225,11 @@ export default function OrderPage() {
         <div className="order-page__top-actions">
           <div className="order-page__stats" aria-label="Ordering statistics">
             <span className="order-page__stat">
-              <strong>{categoryCounts.ALL}</strong> menu items
+              {menuLoading ? (
+                <>Loading menu...</>
+              ) : (
+                <><strong>{categoryCounts.ALL}</strong> menu items</>
+              )}
             </span>
             <span className="order-page__stat">
               <strong>{cartItemCount}</strong> in cart
@@ -326,17 +335,24 @@ export default function OrderPage() {
                     aria-selected={activeCategory === option.key}
                   >
                     <span>{option.label}</span>
-                    <span className="order-page__category-count">{categoryCounts[option.key]}</span>
+                    <span className="order-page__category-count">
+                      {menuLoading ? '...' : categoryCounts[option.key]}
+                    </span>
                   </button>
                 ))}
               </div>
 
-              <p className="order-page__results-meta">
-                Showing {filteredMenuItems.length} item(s), {availableCount} available now.
-              </p>
+              {menuLoading ? (
+                <p className="order-page__results-meta">Loading menu items...</p>
+              ) : (
+                <p className="order-page__results-meta">
+                  Showing {filteredMenuItems.length} item(s), {availableCount} available now.
+                </p>
+              )}
 
               <MenuBrowser
                 items={filteredMenuItems}
+                loading={menuLoading}
                 onAddToCart={handleAddToCart}
                 categoryLabels={CATEGORY_LABELS}
               />

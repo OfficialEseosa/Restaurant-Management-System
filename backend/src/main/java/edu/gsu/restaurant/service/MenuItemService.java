@@ -22,7 +22,7 @@ public class MenuItemService {
     }
 
     public List<MenuItem> getAllMenuItems() {
-        return menuItemRepository.findAll();
+        return menuItemRepository.findAllByOrderByNameAsc();
     }
 
     public MenuItem getMenuItemById(Long id) {

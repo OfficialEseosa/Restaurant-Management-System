@@ -1,6 +1,6 @@
 package edu.gsu.restaurant.entity;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -53,7 +53,7 @@ public class MenuItem {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
-    @JsonManagedReference("menuItem-ingredients")
+    @JsonIgnore
     @OneToMany(mappedBy = "menuItem", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MenuItemIngredient> menuItemIngredients;
 }

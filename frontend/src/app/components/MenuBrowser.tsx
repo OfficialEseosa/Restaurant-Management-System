@@ -7,14 +7,20 @@ type MenuBrowserItem = MenuItemWithAvailability & {
 
 interface MenuBrowserProps {
   items: MenuBrowserItem[];
+  loading?: boolean;
   onAddToCart: (item: MenuItemWithAvailability) => void;
   categoryLabels?: Record<string, string>;
 }
 
-export default function MenuBrowser({ items, onAddToCart, categoryLabels }: MenuBrowserProps) {
+export default function MenuBrowser({ items, loading = false, onAddToCart, categoryLabels }: MenuBrowserProps) {
   return (
     <div className="menu-browser">
-      {items.length === 0 ? (
+      {loading ? (
+        <div className="menu-browser__empty">
+          <h3 className="menu-browser__empty-title">Loading menu</h3>
+          <p className="menu-browser__empty-text">Please wait while we prepare your menu.</p>
+        </div>
+      ) : items.length === 0 ? (
         <div className="menu-browser__empty">
           <h3 className="menu-browser__empty-title">No matches found</h3>
           <p className="menu-browser__empty-text">Try another category or search term.</p>
