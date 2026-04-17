@@ -29,4 +29,8 @@ public class StockChangeLogService {
     public StockChangeLog save(StockChangeLog log) {
         return stockChangeLogRepository.save(log);
     }
+
+    public void delete(Long id) {
+        stockChangeLogRepository.deleteById(id);
+    }
 }
