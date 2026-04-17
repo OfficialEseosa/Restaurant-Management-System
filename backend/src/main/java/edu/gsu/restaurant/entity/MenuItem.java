@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -28,6 +29,11 @@ public class MenuItem {
     private String name;
 
     private String description;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(length = 32)
+    private MenuCategory category;
 
     @DecimalMin("0.01")
     @Column(nullable = false, precision = 10, scale = 2)

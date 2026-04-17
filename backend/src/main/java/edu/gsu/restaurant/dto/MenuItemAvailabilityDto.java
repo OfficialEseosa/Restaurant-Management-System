@@ -1,6 +1,7 @@
 package edu.gsu.restaurant.dto;
 
 import edu.gsu.restaurant.entity.MenuItem;
+import edu.gsu.restaurant.entity.MenuCategory;
 import java.math.BigDecimal;
 
 public class MenuItemAvailabilityDto {
@@ -8,6 +9,7 @@ public class MenuItemAvailabilityDto {
     private Long menuItemId;
     private String name;
     private String description;
+    private MenuCategory category;
     private BigDecimal price;
     private String imageUrl;
     private boolean active;
@@ -17,6 +19,7 @@ public class MenuItemAvailabilityDto {
         this.menuItemId = item.getMenuItemId();
         this.name = item.getName();
         this.description = item.getDescription();
+        this.category = item.getCategory() != null ? item.getCategory() : MenuCategory.SIDES;
         this.price = item.getPrice();
         this.imageUrl = item.getImageUrl();
         this.active = item.isActive();
@@ -26,6 +29,7 @@ public class MenuItemAvailabilityDto {
     public Long getMenuItemId() { return menuItemId; }
     public String getName() { return name; }
     public String getDescription() { return description; }
+    public MenuCategory getCategory() { return category; }
     public BigDecimal getPrice() { return price; }
     public String getImageUrl() { return imageUrl; }
     public boolean isActive() { return active; }
